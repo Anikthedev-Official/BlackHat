@@ -81,7 +81,7 @@ Super Mode Setup
     screen to aim your mouse.
 
 📂 Project Structure
-
+```
 ├── www/
 │   ├── index.html          # Main Entry point
 │   ├── style.css           # Glassmorphism UI Styles
@@ -92,7 +92,10 @@ Super Mode Setup
 │   └── engines/
 │       ├── v2021/          # Legacy Ruffle Engine
 │       └── v2026/          # Modern Ruffle Engine
-└── config.xml              # Cordova Configuration
+├── config.xml              # Cordova Configuration
+└── more blah blash         # BLAHS BLAH
+```
+
 
 🤝 Credits
 
