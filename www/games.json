@@ -1,0 +1,39 @@
+[
+    {
+        "title": "Stick War 1",
+        "url": "games/sw1.swf",
+        "version":"v2021",
+        "category": "Strategy"
+    },
+    {
+        "title": "Stick War 2",
+        "url": "games/sw2.swf",
+        "category": "Strategy"
+    },
+    {
+        "title": "Wolverine Tokyo Fury",
+        "url": "games/wolverine.swf",
+        "category": "Action"
+    },
+    {
+        "title": "Madness Project Nexus Classic",
+        "url": "games/MPNC.swf",
+        "category": "Fighting"
+    },
+    {
+        "title": "Madness Accelerant",
+        "url": "games/MA.swf",
+        "category": "Action"
+    },
+    { 
+        "title": "The Impossible Quiz",
+        "url": "games/The Impossible Quiz.swf",
+        "category": "Puzzle"
+    },
+    {
+        "title": "Alien Hominid",
+        "url": "games/alien_hominid.swf",
+        "category": "Action"
+    }
+    
+]

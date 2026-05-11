@@ -1,0 +1,164 @@
+:root {
+    --primary: #ff9633;
+    --secondary: #37528c;
+    --bg-dark: #37528c;
+    --bg-panel:#37528c;
+    --text: #ffffff;
+    --btn-size: 70px;
+}
+
+.theme-darkblue { --primary: #64ffda; --secondary: #233554; --bg-dark: #0a192f; --bg-panel: rgba(10, 25, 47, 0.9); --text: #ccd6f6; }
+.theme-vscode { --primary: #007acc; --secondary: #333333; --bg-dark: #1e1e1e; --bg-panel: rgba(45, 45, 45, 0.9); --text: #d4d4d4; }
+
+body, html { 
+    margin: 0; padding: 0; width: 100%; height: 100%; 
+    overflow: hidden; background: #000; font-family: sans-serif; 
+    touch-action: none; color: var(--text);
+}
+
+#header {
+    position: fixed; top: 0; left: 0; width: 100%; height: 40px;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 15px; box-sizing: border-box; z-index: 1000;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+}
+#app-title { font-weight: bold; color: var(--primary); font-size: 14px; }
+#header button { background: none; border: none; font-size: 13px; color: white; padding: 4px 8px; }
+
+/* SETTINGS PANEL */
+#settings-panel {
+    position: fixed; top: 0; right: -320px; width: 300px; height: 100vh;
+    background: var(--bg-panel); z-index: 2000; transition: 0.3s ease;
+    padding: 60px 20px 30px 20px; box-sizing: border-box;
+    backdrop-filter: blur(15px);
+    overflow-y: auto; overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+#settings-panel.open { right: 0; }
+.setting-group { margin-bottom: 20px; }
+.setting-group label { display: block; margin-bottom: 8px; font-size: 13px; opacity: 0.8; }
+select, input[type="text"], input[type="range"] { 
+    width: 100%; padding: 8px; background: #222; color: white; 
+    border: 1px solid var(--primary); border-radius: 5px; 
+}
+.theme-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.theme-btn { height: 35px; border: 1px solid white; border-radius: 5px; cursor: pointer; }
+.primary-btn { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; font-weight: bold; border-radius: 5px; cursor: pointer; }
+#close-settings { width: 100%; padding: 10px; background: #444; color: white; border: none; margin-top: 20px; border-radius: 5px; cursor: pointer; }
+
+/* GAME SCREEN */
+#game-screen {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: 1; background: #000;
+    display: flex; justify-content: center; align-items: center;
+}
+#container { 
+    display: flex; justify-content: center; align-items: center;
+    width: 100%; height: 100%; 
+}
+#virtual-cursor {
+    width: 15px; height: 15px; background: var(--primary);
+    border: 2px solid white; border-radius: 50%;
+    position: absolute; pointer-events: none; z-index: 5000;
+    left: 50%; top: 50%;
+}
+
+/* LIBRARY PANEL */
+#library-panel {
+    position: fixed; top: 0; left: -320px; width: 300px; height: 100%;
+    background: var(--bg-panel); z-index: 2000; transition: 0.3s ease;
+    padding: 60px 20px; box-sizing: border-box;
+    backdrop-filter: blur(15px); overflow-y: auto;
+}
+#library-panel.open { left: 0; }
+#library-panel h2 { border-bottom: 2px solid var(--primary); padding-bottom: 10px; }
+#game-list { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+.game-card {
+    background: rgba(255,255,255,0.1); padding: 15px; 
+    border-radius: 8px; cursor: pointer; border: 1px solid transparent;
+    transition: 0.2s; color: white; font-weight: bold;
+}
+.game-card:hover { border-color: var(--primary); background: rgba(255,255,255,0.2); }
+
+/* =====================================================
+   CONTROLS LAYER — holds all dynamic buttons & joysticks
+   ===================================================== */
+#controls-layer {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 1000; pointer-events: none;
+}
+
+/* DYNAMIC BUTTONS (created from layout) */
+.layout-btn {
+    position: absolute;
+    width: var(--btn-size);
+    height: var(--btn-size);
+    border-radius: 50%;
+    border: 2px solid var(--primary);
+    background: rgba(0,0,0,0.55);
+    color: var(--text);
+    font-weight: bold;
+    font-size: 11px;
+    display: flex; justify-content: center; align-items: center;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+    backdrop-filter: blur(5px);
+    cursor: pointer;
+    transition: background 0.1s, transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    text-align: center;
+    padding: 4px;
+}
+.layout-btn:active {
+    transform: translate(-50%, -50%) scale(0.88);
+    background: var(--primary);
+}
+
+/* DYNAMIC JOYSTICK */
+.layout-joy-zone {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+    border: 3px solid rgba(255,255,255,0.25);
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+    backdrop-filter: blur(4px);
+    touch-action: none;
+}
+
+.layout-joy-stick {
+    position: absolute;
+    width: 42%;
+    height: 42%;
+    border-radius: 50%;
+    background: var(--text);
+    opacity: 0.85;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    transition: left 0.04s, top 0.04s;
+}
+
+/* DEBUG LOG */
+#debug-log {
+    position: fixed; top: 50px; left: 10px; color: lime; 
+    font-size: 10px; z-index: 10000; pointer-events: none;
+}
+
+/* TURBO */
+.turbo-active {
+    background: #4caf50 !important;
+    box-shadow: 0 0 10px #4caf50;
+}
+.game-category-header {
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--primary);
+    padding: 12px 4px 6px 4px;
+    border-bottom: 1px solid var(--primary);
+    margin-top: 10px;
+    opacity: 0.9;
+}

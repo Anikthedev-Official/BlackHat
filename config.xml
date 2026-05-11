@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.mustakim.flash" version="0.0.2" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>FlashEmu</name>
+    <description>
+        Flash emulator for playing simple games and animations. Built with Cordova and JavaScript, it provides a nostalgic experience for Flash content on modern platforms.
+    </description>
+    <author email="dev@cordova.apache.org" href="https://cordova.apache.org">
+        Mustakim Rahman
+    </author>
+    <content src="index.html" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+    <preference name="Orientation" value="landscape" />
+</widget>

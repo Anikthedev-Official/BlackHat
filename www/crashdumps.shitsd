@@ -1,0 +1,244 @@
+WwogICAgewogICAgICAgICJpZCI6IDE3NzgxNzY4NTk5OTUsCiAgICAgICAgInR5cGUiOiAiYnV0dG9uIiwKICAgICAgICAibmFtZSI6ICJMIiwKICAgICAgICAieCI6IDkxLAogICAgICAgICJ5IjogODUsCiAgICAgICAgImFjdGlvbiI6ICIwIgogICAgfSwKICAgIHsKICAgICAgICAiaWQiOiAxNzc4MTc2OTIwNjUwLAogICAgICAgICJ0eXBlIjogImJ1dHRvbiIsCiAgICAgICAgIm5hbWUiOiAiUiIsCiAgICAgICAgIngiOiA4MCwKICAgICAgICAieSI6IDg1LAogICAgICAgICJhY3Rpb24iOiAiMiIKICAgIH0sCiAgICB7CiAgICAgICAgImlkIjogMTc3ODE3Nzg3NTI3NSwKICAgICAgICAidHlwZSI6ICJidXR0b24iLAogICAgICAgICJuYW1lIjogIlciLAogICAgICAgICJ4IjogMTMsCiAgICAgICAgInkiOiAxMywKICAgICAgICAiYWN0aW9uIjogImtleTp3IgogICAgfSwKICAgIHsKICAgICAgICAiaWQiOiAxNzc4MTc4MDQ4NTYwLAogICAgICAgICJ0eXBlIjogImJ1dHRvbiIsCiAgICAgICAgIm5hbWUiOiAiQSIsCiAgICAgICAgIngiOiA2LAogICAgICAgICJ5IjogMjIuMywKICAgICAgICAiYWN0aW9uIjogImtleTphIgogICAgfSwKICAgIHsKICAgICAgICAiaWQiOiAxNzc4MTc4MTI5NjU0LAogICAgICAgICJ0eXBlIjogImJ1dHRvbiIsCiAgICAgICAgIm5hbWUiOiAiUyIsCiAgICAgICAgIngiOiAxMywKICAgICAgICAieSI6IDMxLAogICAgICAgICJhY3Rpb24iOiAia2V5OnMiCiAgICB9LAogICAgewogICAgICAgICJpZCI6IDE3NzgxNzgxNjk1MDIsCiAgICAgICAgInR5cGUiOiAiYnV0dG9uIiwKICAgICAgICAibmFtZSI6ICJEIiwKICAgICAgICAieCI6IDIwLAogICAgICAgICJ5IjogMjIuMywKICAgICAgICAiYWN0aW9uIjogImtleTpkIgogICAgfSwKICAgIHsKICAgICAgICAiaWQiOiAxNzc4MjMwMzQwMTg3Ljk1MzEsCiAgICAgICAgInR5cGUiOiAiam95c3RpY2siLAogICAgICAgICJuYW1lIjogIkpveXN0aWNrIiwKICAgICAgICAieCI6IDEzLAogICAgICAgICJ5IjogNzYsCiAgICAgICAgInNpemUiOiAxMzAsCiAgICAgICAgIm1hcHBpbmciOiAiYXJyb3dzIgogICAgfQpd
+W3siaWQiOjEsInR5cGUiOiJidXR0b24iLCJuYW1lIjoiw6LClsKyIiwieCI6MTMsInkiOjcyLCJhY3Rpb24iOiJrZXk6QXJyb3dVcCJ9LHsiaWQiOjIsInR5cGUiOiJidXR0b24iLCJuYW1lIjoiw6LCl8KEIiwieCI6NiwieSI6ODEuMywiYWN0aW9uIjoia2V5OkFycm93TGVmdCJ9LHsiaWQiOjMsInR5cGUiOiJidXR0b24iLCJuYW1lIjoiw6LClsK8IiwieCI6MTMsInkiOjkwLCJhY3Rpb24iOiJrZXk6QXJyb3dEb3duIn0seyJpZCI6NCwidHlwZSI6ImJ1dHRvbiIsIm5hbWUiOiLDosKWwroiLCJ4IjoyMCwieSI6ODEuMywiYWN0aW9uIjoia2V5OkFycm93UmlnaHQifSx7ImlkIjoxNzc4MzE4Njg4ODk4LjA5ODEsInR5cGUiOiJidXR0b24iLCJuYW1lIjoiSnVtcCIsIngiOjg2LCJ5Ijo4MSwiYWN0aW9uIjoia2V5OnMifSx7ImlkIjoxNzc4MzE4ODc1MDA4LjQ1MjQsInR5cGUiOiJidXR0b24iLCJuYW1lIjoiQXR0YWNrIiwieCI6OTUsInkiOjgxLCJhY3Rpb24iOiJrZXk6YSJ9LHsiaWQiOjE3NzgzMTkwMjI2ODUuMDkyOCwidHlwZSI6ImJ1dHRvbiIsIm5hbWUiOiJTbGlkZSIsIngiOjc3LCJ5Ijo4MSwiYWN0aW9uIjoiY29tYm86QXJyb3dSaWdodCtrZXk6QXJyb3dEb3duIn0seyJpZCI6MTc3ODMxOTEwOTUwMi40NDY4LCJ0eXBlIjoiYnV0dG9uIiwibmFtZSI6IkRyb3AiLCJ4Ijo5NSwieSI6MTMsImFjdGlvbiI6ImNvbWJvOkFycm93RG93bitrZXk6cyJ9LHsiaWQiOjE3NzgzMTk1MDg3ODUuMzA1NCwidHlwZSI6ImJ1dHRvbiIsIm5hbWUiOiJTUEwgQVRLIiwieCI6NSwieSI6MTMsImFjdGlvbiI6ImNvbWJvOkFycm93VXAra2V5OmEifSx7ImlkIjoxNzc4MzE5NjIyNzk5LjgxNywidHlwZSI6ImJ1dHRvbiIsIm5hbWUiOiJMSCIsIngiOjE1LCJ5IjoxMywiYWN0aW9uIjoiY29tYm86QXJyb3dVcCtrZXk6QXJyb3dEb3duIn0seyJpZCI6MTc3ODMxOTcyNDc4OS4wNTkzLCJ0eXBlIjoiam95c3RpY2siLCJuYW1lIjoiIiwieCI6OSwieSI6NDQsInNpemUiOjc5LCJtYXBwaW5nIjoibW91c2UifV0=
+
+// =====================================================
+// PERFORMANCE PATCH — paste these into app.js
+// =====================================================
+
+// -------------------------------------------------------
+// 1. REGISTER SERVICE WORKER — paste at very top of app.js
+//    outside window.onload, right after the log() function
+// -------------------------------------------------------
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+        .then(() => console.log('SW registered'))
+        .catch(e => console.log('SW failed:', e));
+}
+
+
+// -------------------------------------------------------
+// 2. LOADING SCREEN HELPER — paste inside window.onload
+//    before the isDesktop block
+// -------------------------------------------------------
+function showLoader(msg) {
+    let el = document.getElementById('boot-loader');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'boot-loader';
+        el.style.cssText = `
+            position:fixed; inset:0; background:#000;
+            display:flex; flex-direction:column;
+            justify-content:center; align-items:center;
+            z-index:9998; color:#f2711c;
+            font-family:sans-serif; gap:12px;
+            transition: opacity 0.3s;
+        `;
+        el.innerHTML = `
+            <div style="font-size:28px; font-weight:bold; letter-spacing:0.1em;">⚡ FLASH EMU PRO</div>
+            <div id="boot-loader-msg" style="font-size:14px; opacity:0.7;">Loading...</div>
+            <div style="width:200px; height:3px; background:#222; border-radius:2px; overflow:hidden; margin-top:8px;">
+                <div id="boot-loader-bar" style="height:100%; width:0%; background:#f2711c; transition:width 0.3s;"></div>
+            </div>
+        `;
+        document.body.appendChild(el);
+    }
+    document.getElementById('boot-loader-msg').innerText = msg;
+    return el;
+}
+
+function updateLoader(msg, pct) {
+    const el = document.getElementById('boot-loader');
+    if (!el) return;
+    document.getElementById('boot-loader-msg').innerText = msg;
+    document.getElementById('boot-loader-bar').style.width = pct + '%';
+}
+
+function hideLoader() {
+    const el = document.getElementById('boot-loader');
+    if (!el) return;
+    el.style.opacity = '0';
+    setTimeout(() => el.remove(), 300);
+}
+
+
+// -------------------------------------------------------
+// 3. REPLACE initPlayer() with this performance version
+//    Has: lazy loading, resolution scale, preload hint,
+//    and loading screen integration
+// -------------------------------------------------------
+async function initPlayer() {
+    log("Initializing Player...");
+    updateLoader("Loading Flash engine...", 30);
+
+    const engineSelect = document.getElementById('engine-select');
+    if (!engineSelect) return;
+    const version = engineSelect.value;
+
+    try {
+        await loadEngine(version);
+        updateLoader("Starting player...", 60);
+
+        let attempts = 0;
+        while (!window.RufflePlayer && attempts < 50) {
+            attempts++;
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        const ruffle = window.RufflePlayer.newest();
+        currentPlayer = ruffle.createPlayer({
+            letterbox: true,
+            fitToContainer: true,
+            quality: "low",
+            warnOnUnsupportedContent: false,
+            logLevel: "error", // suppress Ruffle spam
+        });
+
+        // Resolution scale — 75% on high-DPI mobile, 100% on desktop
+        const resolutionScale = window.devicePixelRatio > 1 ? 0.75 : 1;
+
+        currentPlayer.style.width  = (window.innerWidth  * resolutionScale) + "px";
+        currentPlayer.style.height = (window.innerHeight * resolutionScale) + "px";
+        currentPlayer.style.transform = `scale(${1 / resolutionScale})`;
+        currentPlayer.style.transformOrigin = "top left";
+        currentPlayer.style.imageRendering = "pixelated";
+
+        document.getElementById("container").appendChild(currentPlayer);
+        updateLoader("Ready!", 100);
+        log(`Player ready. Scale: ${resolutionScale * 100}% | DPR: ${window.devicePixelRatio}`);
+
+    } catch (e) {
+        log("CRITICAL ERROR: " + e.message);
+        updateLoader("Engine failed: " + e.message, 100);
+    }
+}
+
+
+// -------------------------------------------------------
+// 4. LAZY ENGINE LOADING — replace your loadEngine()
+//    Adds: crossorigin for caching, preload hint injection
+// -------------------------------------------------------
+async function loadEngine(version) {
+    log(`Requesting Engine ${version}...`);
+    if (currentPlayer) { currentPlayer.remove(); currentPlayer = null; }
+    const oldScript = document.getElementById('ruffle-script');
+    if (oldScript) oldScript.remove();
+
+    // Inject a <link rel="preload"> hint so browser fetches it ASAP
+    const preload = document.createElement('link');
+    preload.rel = 'preload';
+    preload.as = 'script';
+    preload.href = `engines/${version}/ruffle.js`;
+    preload.crossOrigin = 'anonymous';
+    document.head.appendChild(preload);
+
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.id = 'ruffle-script';
+        script.src = `engines/${version}/ruffle.js`;
+        script.crossOrigin = 'anonymous'; // required for cache to work cross-origin
+        script.onload = () => { log(`Engine ${version} loaded`); resolve(); };
+        script.onerror = () => {
+            log(`NETWORK ERROR: engines/${version}/ruffle.js not found`);
+            reject(new Error(`Failed to load engine ${version}`));
+        };
+        document.head.appendChild(script);
+    });
+}
+
+
+// -------------------------------------------------------
+// 5. BOOT SEQUENCE — replace your BOOT section at the bottom
+//    of window.onload (the buildLayoutControls / loadLibrary part)
+// -------------------------------------------------------
+
+// Show loader immediately
+showLoader("Starting up...");
+
+// Lazy load — don't init player on boot, wait for game selection
+// Comment out: await initPlayer();
+// And add this instead at boot:
+updateLoader("Loading library...", 10);
+loadLibrary();
+buildLayoutControls();
+updateLoader("Ready!", 100);
+setTimeout(hideLoader, 500); // hide after half a second
+log("Ready. All systems active.");
+window.buildLayoutControls = buildLayoutControls;
+
+// Then in loadLibrary card.onclick, add initPlayer() before loading:
+// if (!currentPlayer) await initPlayer(); // lazy init
+// Already handled in the loadLibrary function below ↓
+
+
+// -------------------------------------------------------
+// 6. UPDATED loadLibrary — lazy initializes player on first game load
+// -------------------------------------------------------
+async function loadLibrary() {
+    try {
+        const response = await fetch('games.json');
+        const games = await response.json();
+        gameList.innerHTML = "";
+
+        const categories = {};
+        games.forEach(game => {
+            const cat = game.category || 'Other';
+            if (!categories[cat]) categories[cat] = [];
+            categories[cat].push(game);
+        });
+
+        Object.entries(categories).forEach(([catName, catGames]) => {
+            const header = document.createElement('div');
+            header.className = 'game-category-header';
+            header.innerText = catName;
+            gameList.appendChild(header);
+
+            catGames.forEach(game => {
+                const card = document.createElement('div');
+                card.className = 'game-card';
+                card.innerText = game.title;
+                card.onclick = async () => {
+                    libraryPanel.classList.remove('open');
+                    showLoader(`Loading ${game.title}...`);
+
+                    // Switch engine if needed
+                    if (game.version) {
+                        document.getElementById('engine-select').value = game.version;
+                    }
+
+                    // Lazy init — only create player when actually needed
+                    if (!currentPlayer) {
+                        await initPlayer();
+                    } else if (game.version) {
+                        await initPlayer(); // reinit if engine changed
+                    }
+
+                    updateLoader(`Starting ${game.title}...`, 80);
+
+                    try {
+                        if (game.data) {
+                            const binary = atob(game.data);
+                            const bytes = new Uint8Array(binary.length);
+                            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                            await currentPlayer.load({ data: bytes });
+                        } else if (game.url === 'local') {
+                            hideLoader();
+                            document.getElementById('file-input').click();
+                            return;
+                        } else {
+                            await currentPlayer.load({ url: game.url });
+                        }
+                        log(`Loaded: ${game.title}`);
+                    } catch(e) {
+                        log("Load error: " + e.message);
+                    }
+
+                    hideLoader();
+                };
+                gameList.appendChild(card);
+            });
+        });
+
+        log("Library Loaded");
+    } catch (e) { log("Lib Error: " + e.message); }
+}
+all hail errors

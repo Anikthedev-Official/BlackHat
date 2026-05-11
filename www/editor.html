@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Layout Editor</title>
+    <style>
+        body { 
+            background: #111; color: white; font-family: sans-serif; 
+            display: flex; height: 100vh; margin: 0; overflow: hidden; 
+            box-sizing: border-box;
+        }
+        *, *:before, *:after { box-sizing: border-box; }
+
+        #editor-panel { 
+            width: 350px; background: #1a1a1a; padding: 20px; 
+            border-right: 3px solid #f2711c; overflow-y: auto; 
+            z-index: 10; box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+        }
+
+        #visualizer-panel { 
+            flex: 1; display: flex; justify-content: center; 
+            align-items: center; background: #050505; position: relative; 
+        }
+
+        #phone-preview {
+            width: 600px; height: 337px; background: #1a1a2e; 
+            border: 8px solid #333; border-radius: 30px;
+            position: relative; overflow: hidden;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        }
+
+        #phone-preview::before {
+            content: '';
+            position: absolute; inset: 0;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 10% 10%;
+            pointer-events: none;
+        }
+
+        h2 { color: #f2711c; margin-top: 0; }
+        h3 { color: #f2711c; margin-bottom: 10px; }
+
+        .setting-group { 
+            background: #222; padding: 15px; border-radius: 10px; 
+            margin-bottom: 15px; border: 1px solid #333;
+        }
+
+        .tab-row { display: flex; gap: 5px; margin-bottom: 15px; }
+        .tab-btn { flex: 1; padding: 8px; background: #333; color: #aaa; border: 1px solid #444; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .tab-btn.active { background: #f2711c; color: white; border-color: #f2711c; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .input-row { display: flex; flex-direction: column; gap: 10px; }
+        .input-field { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 5px; }
+        .input-field label { font-size: 13px; opacity: 0.8; white-space: nowrap; }
+
+        input, select { 
+            background: #333; color: white; border: 1px solid #f2711c; 
+            padding: 8px; border-radius: 5px; width: 130px; outline: none;
+        }
+
+        .primary-btn { 
+            width: 100%; padding: 12px; background: #f2711c; 
+            color: white; border: none; font-weight: bold; 
+            border-radius: 5px; cursor: pointer; margin-top: 10px;
+        }
+
+        #button-list, #joystick-list { margin-top: 10px; }
+
+        .btn-list-item { 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: #2a2a2a; padding: 10px; margin: 6px 0; 
+            border-radius: 5px; cursor: pointer; border: 1px solid #444;
+        }
+        .btn-list-item.active { border-color: #f2711c; background: #333; }
+        .btn-list-item .item-label { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+        .item-type-badge { 
+            font-size: 10px; padding: 2px 6px; border-radius: 3px; 
+            background: #444; color: #aaa; font-family: monospace;
+            max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .item-type-badge.joy { background: #1a3a5c; color: #64b5f6; }
+
+        .remove-btn { background: #ff4444; color: white; border: none; border-radius: 4px; cursor: pointer; padding: 5px 10px; flex-shrink: 0; }
+
+        .save-btn { width: 100%; padding: 15px; background: #4caf50; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; border-radius: 5px; }
+        .back-btn { width: 100%; padding: 10px; background: #444; color: white; border: none; margin-top: 8px; border-radius: 5px; cursor: pointer; }
+        .clear-btn { width: 100%; padding: 10px; background: #8b0000; color: white; border: none; margin-top: 8px; border-radius: 5px; cursor: pointer; }
+
+        .preview-btn {
+            position: absolute;
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            border: 2px solid rgba(255,255,255,0.6);
+            color: white; font-size: 9px; font-weight: bold;
+            display: flex; justify-content: center; align-items: center;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            transition: background 0.1s;
+            text-align: center; line-height: 1.2;
+        }
+        .preview-btn.selected { background: rgba(242,113,28,0.6); border-color: #f2711c; }
+
+        .preview-joy {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(100,181,246,0.1);
+            border: 2px dashed rgba(100,181,246,0.5);
+            display: flex; justify-content: center; align-items: center;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            color: rgba(100,181,246,0.8);
+            font-size: 9px; font-weight: bold;
+        }
+        .preview-joy.selected { border-color: #f2711c; background: rgba(242,113,28,0.1); color: #f2711c; }
+        .preview-joy-inner {
+            width: 35%; height: 35%;
+            border-radius: 50%;
+            background: rgba(100,181,246,0.3);
+            border: 2px solid rgba(100,181,246,0.6);
+        }
+        .preview-joy.selected .preview-joy-inner { background: rgba(242,113,28,0.4); border-color: #f2711c; }
+
+        .combo-hint {
+            font-size: 11px; color: #f2711c; padding: 4px 0;
+            line-height: 1.5; border-top: 1px solid #333; margin-top: 4px; padding-top: 8px;
+        }
+
+        .action-preview-box {
+            font-size: 11px; color: #aaa; padding: 6px 8px;
+            background: #1a1a1a; border-radius: 4px; font-family: monospace;
+            border-left: 2px solid #f2711c; word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+
+<div id="editor-panel">
+    <h2>🎮 Layout Editor</h2>
+
+    <div class="tab-row">
+        <button class="tab-btn active" onclick="switchTab('btn-tab', this)">🔵 Buttons</button>
+        <button class="tab-btn" onclick="switchTab('joy-tab', this)">🕹️ Joysticks</button>
+    </div>
+
+    <!-- BUTTON TAB -->
+    <div id="btn-tab" class="tab-content active">
+        <div class="setting-group">
+            <div class="input-row">
+                <div class="input-field">
+                    <label>Name</label>
+                    <input type="text" id="btn-name" placeholder="Jump">
+                </div>
+                <div class="input-field">
+                    <label>X Position %</label>
+                    <input type="number" id="btn-posX" value="80" min="0" max="100">
+                </div>
+                <div class="input-field">
+                    <label>Y Position %</label>
+                    <input type="number" id="btn-posY" value="75" min="0" max="100">
+                </div>
+
+                <!-- ACTION TYPE -->
+                <div class="input-field">
+                    <label>Action Type</label>
+                    <select id="btn-action-type" onchange="onActionTypeChange()">
+                        <option value="click">🖱️ Mouse Click</option>
+                        <option value="key">⌨️ Key Press</option>
+                        <option value="combo">⚡ Combo</option>
+                    </select>
+                </div>
+
+                <!-- CLICK -->
+                <div id="action-click-row" class="input-field">
+                    <label>Click</label>
+                    <select id="action-click" onchange="updateActionPreview()">
+                        <option value="0">Left Click</option>
+                        <option value="1">Middle Click</option>
+                        <option value="2">Right Click</option>
+                    </select>
+                </div>
+
+                <!-- KEY -->
+                <div id="action-key-row" class="input-field" style="display:none;">
+                    <label>Key</label>
+                    <input type="text" id="action-key" placeholder="s, ArrowDown, Space..." oninput="updateActionPreview()">
+                </div>
+
+                <!-- COMBO -->
+                <div id="action-combo-row" style="display:none; flex-direction:column; gap:8px;">
+                    <div class="input-field">
+                        <label>Key 1</label>
+                        <input type="text" id="action-combo-key1" placeholder="e.g. s, ArrowDown, z" oninput="updateActionPreview()">
+                    </div>
+                    <div class="input-field">
+                        <label>+ Type</label>
+                        <select id="action-combo-second-type" onchange="onComboSecondTypeChange()">
+                            <option value="click">🖱️ Mouse Click</option>
+                            <option value="key">⌨️ Key Press</option>
+                        </select>
+                    </div>
+                    <!-- second = click -->
+                    <div id="combo-second-click-row" class="input-field">
+                        <label>Click</label>
+                        <select id="action-combo-click" onchange="updateActionPreview()">
+                            <option value="0">Left Click</option>
+                            <option value="1">Middle Click</option>
+                            <option value="2">Right Click</option>
+                        </select>
+                    </div>
+                    <!-- second = key -->
+                    <div id="combo-second-key-row" class="input-field" style="display:none;">
+                        <label>Key 2</label>
+                        <input type="text" id="action-combo-key2" placeholder="e.g. ArrowDown, x, Enter" oninput="updateActionPreview()">
+                    </div>
+                    <div class="combo-hint">
+                        ⚡ Both inputs fire at the same time<br>
+                        Examples: <em>s + L-Click</em> = platform drop<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<em>ArrowDown + z</em> = down attack
+                    </div>
+                </div>
+
+                <!-- Live action preview -->
+                <div class="action-preview-box" id="action-preview">action: click:0</div>
+
+                <button id="add-btn-btn" class="primary-btn">+ Add Button</button>
+            </div>
+        </div>
+        <h3>Buttons <span id="btn-count" style="opacity:0.5;font-size:12px;font-weight:normal;"></span></h3>
+        <div id="button-list"></div>
+    </div>
+
+    <!-- JOYSTICK TAB -->
+    <div id="joy-tab" class="tab-content">
+        <div class="setting-group">
+            <div class="input-row">
+                <div class="input-field"><label>Name</label><input type="text" id="joy-name" placeholder="Move"></div>
+                <div class="input-field"><label>X Position %</label><input type="number" id="joy-posX" value="15" min="0" max="100"></div>
+                <div class="input-field"><label>Y Position %</label><input type="number" id="joy-posY" value="75" min="0" max="100"></div>
+                <div class="input-field"><label>Size (px)</label><input type="number" id="joy-size" value="130" min="60" max="250"></div>
+                <div class="input-field">
+                    <label>Controls</label>
+                    <select id="joy-mapping">
+                        <option value="wasd">WASD Keys</option>
+                        <option value="arrows">Arrow Keys</option>
+                        <option value="mouse">Mouse Cursor</option>
+                    </select>
+                </div>
+                <button id="add-joy-btn" class="primary-btn">+ Add Joystick</button>
+            </div>
+        </div>
+        <h3>Joysticks <span id="joy-count" style="opacity:0.5;font-size:12px;font-weight:normal;"></span></h3>
+        <div id="joystick-list"></div>
+    </div>
+
+    <button id="save-config" class="save-btn">💾 Save Layout</button>
+    <button id="clear-btn" class="clear-btn">🗑️ Clear All</button>
+    <button id="back-btn" class="back-btn">⬅️ Back to Game</button>
+</div>
+
+<div id="visualizer-panel">
+    <div id="phone-preview"></div>
+</div>
+
+<script>
+    let layout = [];
+    let selectedId = null;
+
+    function switchTab(tabId, btnEl) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btnEl.classList.add('active');
+    }
+
+    window.onload = () => {
+        const saved = localStorage.getItem('flash_emu_layout');
+        if (saved) {
+            try { layout = JSON.parse(saved); } catch(e) { layout = []; }
+        }
+        // migrate old format
+        if (!layout.length) {
+            const old = localStorage.getItem('custom_layout');
+            if (old) {
+                try {
+                    const oldData = JSON.parse(old);
+                    layout = oldData.map(b => ({
+                        id: b.id || Date.now() + Math.random(),
+                        type: 'button',
+                        name: b.name,
+                        x: parseFloat(b.x),
+                        y: parseFloat(b.y),
+                        action: b.action
+                    }));
+                } catch(e) {}
+            }
+        }
+        renderAll();
+    };
+
+    // =====================================================
+    // ACTION BUILDER
+    // =====================================================
+    function onActionTypeChange() {
+        const type = document.getElementById('btn-action-type').value;
+        document.getElementById('action-click-row').style.display     = type === 'click' ? 'flex'    : 'none';
+        document.getElementById('action-key-row').style.display       = type === 'key'   ? 'flex'    : 'none';
+        document.getElementById('action-combo-row').style.display     = type === 'combo' ? 'flex'    : 'none';
+        updateActionPreview();
+    }
+
+    function onComboSecondTypeChange() {
+        const t = document.getElementById('action-combo-second-type').value;
+        document.getElementById('combo-second-click-row').style.display = t === 'click' ? 'flex' : 'none';
+        document.getElementById('combo-second-key-row').style.display   = t === 'key'   ? 'flex' : 'none';
+        updateActionPreview();
+    }
+
+    function buildActionString() {
+        const type = document.getElementById('btn-action-type').value;
+        if (type === 'click') {
+            return 'click:' + document.getElementById('action-click').value;
+        } else if (type === 'key') {
+            return 'key:' + (document.getElementById('action-key').value.trim() || 'a');
+        } else if (type === 'combo') {
+            const k1 = document.getElementById('action-combo-key1').value.trim() || 'a';
+            const secondType = document.getElementById('action-combo-second-type').value;
+            if (secondType === 'key') {
+                const k2 = document.getElementById('action-combo-key2').value.trim() || 'a';
+                return 'combo:' + k1 + '+key:' + k2;   // e.g. combo:ArrowDown+key:z
+            } else {
+                const c = document.getElementById('action-combo-click').value;
+                return 'combo:' + k1 + ':' + c;         // e.g. combo:s:0
+            }
+        }
+        return 'click:0';
+    }
+
+    function updateActionPreview() {
+        const s = buildActionString();
+        const el = document.getElementById('action-preview');
+        if (el) el.innerText = 'action: ' + s;
+        // live-update selected item
+        const item = layout.find(i => i.id === selectedId && i.type === 'button');
+        if (item) { item.action = s; renderAll(); }
+    }
+
+    // Fill the action builder from a saved action string
+    function fillActionFields(action) {
+        const a = action || 'click:0';
+        if (a.startsWith('combo:')) {
+            document.getElementById('btn-action-type').value = 'combo';
+            const payload = a.slice(6); // strip "combo:"
+            if (payload.includes('+key:')) {
+                const [k1, k2] = payload.split('+key:');
+                document.getElementById('action-combo-key1').value = k1 || '';
+                document.getElementById('action-combo-second-type').value = 'key';
+                document.getElementById('action-combo-key2').value = k2 || '';
+            } else {
+                const parts = payload.split(':');
+                document.getElementById('action-combo-key1').value = parts[0] || '';
+                document.getElementById('action-combo-second-type').value = 'click';
+                document.getElementById('action-combo-click').value = parts[1] || '0';
+            }
+        } else if (a.startsWith('key:')) {
+            document.getElementById('btn-action-type').value = 'key';
+            document.getElementById('action-key').value = a.slice(4);
+        } else {
+            document.getElementById('btn-action-type').value = 'click';
+            document.getElementById('action-click').value = a.replace('click:', '') || '0';
+        }
+        onActionTypeChange();
+        onComboSecondTypeChange();
+    }
+
+    // =====================================================
+    // RENDER
+    // =====================================================
+    function renderAll() {
+        renderPreview();
+        renderButtonList();
+        renderJoystickList();
+    }
+
+    function renderPreview() {
+        const preview = document.getElementById('phone-preview');
+        preview.innerHTML = '';
+
+        layout.forEach(item => {
+            if (item.type === 'button') {
+                const div = document.createElement('div');
+                div.className = 'preview-btn' + (item.id === selectedId ? ' selected' : '');
+                div.style.left = item.x + '%';
+                div.style.top = item.y + '%';
+                div.innerText = item.name;
+                div.onclick = () => selectItem(item.id);
+                makeDraggable(div, item);
+                preview.appendChild(div);
+
+            } else if (item.type === 'joystick') {
+                const div = document.createElement('div');
+                div.className = 'preview-joy' + (item.id === selectedId ? ' selected' : '');
+                div.style.left = item.x + '%';
+                div.style.top = item.y + '%';
+                div.style.width = item.size + 'px';
+                div.style.height = item.size + 'px';
+                div.innerHTML = '<div class="preview-joy-inner"></div>';
+
+                const lbl = document.createElement('div');
+                lbl.style.cssText = 'position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:9px;white-space:nowrap;opacity:0.7;';
+                lbl.innerText = item.name;
+                div.appendChild(lbl);
+
+                div.onclick = () => selectItem(item.id);
+                makeDraggable(div, item);
+                preview.appendChild(div);
+            }
+        });
+    }
+
+    function makeDraggable(el, item) {
+        let dragging = false, startX, startY, startItemX, startItemY;
+        const preview = document.getElementById('phone-preview');
+
+        el.addEventListener('pointerdown', (e) => {
+            dragging = true;
+            el.setPointerCapture(e.pointerId);
+            startX = e.clientX; startY = e.clientY;
+            startItemX = item.x; startItemY = item.y;
+            e.stopPropagation();
+        });
+        el.addEventListener('pointermove', (e) => {
+            if (!dragging) return;
+            const rect = preview.getBoundingClientRect();
+            const dx = ((e.clientX - startX) / rect.width) * 100;
+            const dy = ((e.clientY - startY) / rect.height) * 100;
+            item.x = Math.max(0, Math.min(100, startItemX + dx));
+            item.y = Math.max(0, Math.min(100, startItemY + dy));
+            renderPreview();
+            if (item.id === selectedId) fillFields(item);
+        });
+        el.addEventListener('pointerup', () => { dragging = false; });
+    }
+
+    function selectItem(id) {
+        selectedId = id;
+        const item = layout.find(i => i.id === id);
+        if (!item) return;
+        fillFields(item);
+        renderAll();
+    }
+
+    function fillFields(item) {
+        if (item.type === 'button') {
+            document.getElementById('btn-name').value = item.name;
+            document.getElementById('btn-posX').value = item.x.toFixed(1);
+            document.getElementById('btn-posY').value = item.y.toFixed(1);
+            fillActionFields(item.action);
+        } else {
+            document.getElementById('joy-name').value = item.name;
+            document.getElementById('joy-posX').value = item.x.toFixed(1);
+            document.getElementById('joy-posY').value = item.y.toFixed(1);
+            document.getElementById('joy-size').value = item.size;
+            document.getElementById('joy-mapping').value = item.mapping;
+        }
+    }
+
+    function renderButtonList() {
+        const list = document.getElementById('button-list');
+        const btns = layout.filter(i => i.type === 'button');
+        document.getElementById('btn-count').innerText = `(${btns.length})`;
+        list.innerHTML = '';
+        btns.forEach(item => {
+            const el = document.createElement('div');
+            el.className = 'btn-list-item' + (item.id === selectedId ? ' active' : '');
+            el.innerHTML = `
+                <div class="item-label">
+                    <span class="item-type-badge">${item.action}</span>
+                    <span>${item.name}</span>
+                </div>
+                <button class="remove-btn">✕</button>`;
+            el.onclick = (e) => { if (!e.target.classList.contains('remove-btn')) selectItem(item.id); };
+            el.querySelector('.remove-btn').onclick = (e) => { e.stopPropagation(); removeItem(item.id); };
+            list.appendChild(el);
+        });
+    }
+
+    function renderJoystickList() {
+        const list = document.getElementById('joystick-list');
+        const joys = layout.filter(i => i.type === 'joystick');
+        document.getElementById('joy-count').innerText = `(${joys.length})`;
+        list.innerHTML = '';
+        joys.forEach(item => {
+            const el = document.createElement('div');
+            el.className = 'btn-list-item' + (item.id === selectedId ? ' active' : '');
+            el.innerHTML = `
+                <div class="item-label">
+                    <span class="item-type-badge joy">🕹️ ${item.mapping}</span>
+                    <span>${item.name}</span>
+                </div>
+                <button class="remove-btn">✕</button>`;
+            el.onclick = (e) => { if (!e.target.classList.contains('remove-btn')) selectItem(item.id); };
+            el.querySelector('.remove-btn').onclick = (e) => { e.stopPropagation(); removeItem(item.id); };
+            list.appendChild(el);
+        });
+    }
+
+    function removeItem(id) {
+        layout = layout.filter(i => i.id !== id);
+        if (selectedId === id) selectedId = null;
+        renderAll();
+    }
+
+    // =====================================================
+    // ADD BUTTONS
+    // =====================================================
+    document.getElementById('add-btn-btn').onclick = () => {
+        const item = {
+            id: Date.now() + Math.random(),
+            type: 'button',
+            name: document.getElementById('btn-name').value || 'Btn',
+            x: parseFloat(document.getElementById('btn-posX').value) || 80,
+            y: parseFloat(document.getElementById('btn-posY').value) || 75,
+            action: buildActionString()
+        };
+        layout.push(item);
+        selectedId = item.id;
+        renderAll();
+    };
+
+    document.getElementById('add-joy-btn').onclick = () => {
+        const item = {
+            id: Date.now() + Math.random(),
+            type: 'joystick',
+            name: document.getElementById('joy-name').value || 'Joystick',
+            x: parseFloat(document.getElementById('joy-posX').value) || 15,
+            y: parseFloat(document.getElementById('joy-posY').value) || 75,
+            size: parseInt(document.getElementById('joy-size').value) || 130,
+            mapping: document.getElementById('joy-mapping').value
+        };
+        layout.push(item);
+        selectedId = item.id;
+        renderAll();
+    };
+
+    // Live-update position/name fields
+    ['btn-name', 'btn-posX', 'btn-posY'].forEach(id => {
+        document.getElementById(id).oninput = () => {
+            const item = layout.find(i => i.id === selectedId && i.type === 'button');
+            if (!item) return;
+            item.name = document.getElementById('btn-name').value;
+            item.x = parseFloat(document.getElementById('btn-posX').value) || item.x;
+            item.y = parseFloat(document.getElementById('btn-posY').value) || item.y;
+            item.action = buildActionString();
+            renderAll();
+        };
+    });
+    ['joy-name', 'joy-posX', 'joy-posY', 'joy-size', 'joy-mapping'].forEach(id => {
+        document.getElementById(id).oninput = () => {
+            const item = layout.find(i => i.id === selectedId && i.type === 'joystick');
+            if (!item) return;
+            item.name = document.getElementById('joy-name').value;
+            item.x = parseFloat(document.getElementById('joy-posX').value) || item.x;
+            item.y = parseFloat(document.getElementById('joy-posY').value) || item.y;
+            item.size = parseInt(document.getElementById('joy-size').value) || item.size;
+            item.mapping = document.getElementById('joy-mapping').value;
+            renderAll();
+        };
+    });
+
+    document.getElementById('save-config').onclick = () => {
+        localStorage.setItem('flash_emu_layout', JSON.stringify(layout));
+        const btn = document.getElementById('save-config');
+        btn.innerText = '✅ Saved!';
+        setTimeout(() => btn.innerText = '💾 Save Layout', 1500);
+    };
+
+    document.getElementById('clear-btn').onclick = () => {
+        if (confirm('Clear all buttons and joysticks?')) {
+            layout = []; selectedId = null; renderAll();
+        }
+    };
+
+    document.getElementById('back-btn').onclick = () => {
+        window.location.href = 'index.html';
+    };
+</script>
+</body>
+</html>

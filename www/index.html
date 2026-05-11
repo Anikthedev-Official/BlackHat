@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-ruffle">
+
+    <div id="header">
+        <div id="app-title">FLASH EMU PRO</div>
+           <button id="library-toggle">Library</button>
+        <button id="settings-toggle">Settings</button>
+    </div>
+<div id="library-panel">
+    <h2>Game Library</h2>
+    <div id="game-list"></div>
+</div>
+
+<div id="settings-panel">
+    <h2>Settings</h2>
+    
+        <div class="setting-group">
+            <label>Cursor Control Mode</label>
+            <select id="mode-select">
+                <option value="joystick">🕹️ Joystick (cursor control)</option>
+                <option value="direct">👆 Direct Touch (finger = cursor)</option>
+                <option value="super">⚡ Super Mode (joystick + keys)</option>
+                <option value="custom">🎮 Custom Layout (full control)</option>
+            </select>
+        </div>
+
+        <!-- ===== LAYOUT LIBRARY ===== -->
+        <div class="setting-group" style="border: 1px solid #f2711c; background: rgba(242,113,28,0.07);">
+            <label>📚 Layout Library</label>
+            <select id="layout-library-select" style="margin-bottom: 6px;">
+                <!-- populated by layout-library.js -->
+            </select>
+            <div id="layout-library-desc" style="font-size: 11px; opacity: 0.6; margin-bottom: 8px; min-height: 16px;"></div>
+            <button id="layout-library-load" class="primary-btn">▶ Load Preset</button>
+        </div>
+
+        <!-- Only visible when Custom Layout is selected -->
+        <div class="setting-group" id="custom-layout-group" style="display:none; border: 1px solid #f2711c; background: rgba(242,113,28,0.05);">
+            <label>Custom Layout</label>
+            <button id="open-editor-btn" class="primary-btn">🎮 Open Layout Editor</button>
+            <button id="reload-layout-btn" class="primary-btn" style="background:#555; margin-top:8px;">🔄 Reload Layout</button>
+        </div>
+
+        <div class="setting-group">
+            <label>Joystick Mapping (For Super Mode)</label>
+            <select id="key-mapping">
+                <option value="wasd">WASD Keys</option>
+                <option value="arrows">Arrow Keys</option>
+            </select>
+        </div>
+
+        <div class="setting-group">
+            <label>Button Size</label>
+            <input type="range" id="size-slider" min="40" max="120" value="70">
+        </div>
+
+        <div class="setting-group" style="border-top: 1px solid #444; padding-top: 15px;">
+            <label>Add Custom Button</label>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; gap: 5px;">
+                    <input type="text" id="cust-name" placeholder="Btn Name" style="width: 70px;">
+                    <select id="cust-type">
+                        <option value="mouse">🖱️ Mouse</option>
+                        <option value="key">⌨️ Key</option>
+                        <option value="combo">⚡ Combo</option>
+                    </select>
+                </div>
+                <div id="mouse-options" class="opt-row">
+                    <select id="cust-mouse">
+                        <option value="0">Left Click</option>
+                        <option value="1">Middle Click</option>
+                        <option value="2">Right Click</option>
+                    </select>
+                </div>
+                <div id="key-options" class="opt-row" style="display:none;">
+                    <input type="text" id="cust-key" placeholder="e.g. Space, Enter, a">
+                </div>
+                <div id="combo-options" class="opt-row" style="display:none; flex-direction: row; gap: 5px;">
+                    <input type="text" id="cust-combo-key" placeholder="Key" style="width: 60px;">
+                    <select id="cust-combo-mouse">
+                        <option value="0">L-Click</option>
+                        <option value="2">R-Click</option>
+                    </select>
+                </div>
+                <button id="add-btn" class="primary-btn">+</button>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label>Theme</label>
+            <div class="theme-grid">
+                <button class="theme-btn" data-theme="theme-ruffle" style="background: #f2711c;"></button>
+                <button class="theme-btn" data-theme="theme-darkblue" style="background: #0a192f;"></button>
+                <button class="theme-btn" data-theme="theme-vscode" style="background: #1e1e1e; border: 1px solid #555;"></button>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label>Input Realism</label>
+            <select id="realism-select">
+                <option value="off">Standard (Click only)</option>
+                <option value="on">Realism (Real-time Tracking)</option>
+            </select>
+        </div>
+
+        <div class="setting-group">
+            <label>Engine Version</label>
+            <select id="engine-select">
+                <option value="v2026">Modern (v2026)</option>
+                <option value="v2021">Legacy (v2021)</option>
+            </select>
+        </div>
+
+        <div class="setting-group">
+            <label>Optimization</label>
+            <button id="perf-toggle" class="primary-btn" style="background: #555;">⚡ Turbo Mode: OFF</button>
+        </div>
+
+        <div class="setting-group">
+            <input type="file" id="file-input" accept=".swf" style="display:none">
+            <button id="select-swf-btn" class="primary-btn">📂 Load SWF</button>
+        </div>
+
+        <div class="setting-group" style="border-bottom: 1px solid #444; padding-bottom: 15px;">
+            <label>Load from Web URL</label>
+            <div style="display: flex; gap: 5px;">
+                <input type="text" id="url-input" placeholder="http://...swf">
+                <button id="load-url-btn" class="primary-btn" style="width: auto;">Go</button>
+            </div>
+        </div>
+        
+        <button id="close-settings">Close</button>
+    </div>
+
+    <div id="game-screen">
+        <div id="container"></div>
+        <div id="virtual-cursor"></div>
+    </div>
+
+    <!-- DEFAULT controls — shown in joystick/super mode -->
+    <div id="left-controls">
+        <div id="joystick-zone">
+            <div id="stick"></div>
+        </div>
+    </div>
+
+    <div id="right-controls">
+        <div id="button-zone">
+            <button id="btn-left">L</button>
+            <button id="btn-right">R</button>
+        </div>
+    </div>
+
+    <!-- CUSTOM LAYOUT layer — only shown when mode = custom -->
+    <div id="controls-layer" style="display:none;"></div>
+
+    <div id="debug-log">Ready</div>
+
+    <!-- load library presets before app.js -->
+    <script src="layout-library.js"></script>
+    <script>initLayoutLibrary();</script>
+    <script src="app.js"> </script>
+</body>
+</html>

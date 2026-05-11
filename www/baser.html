@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON ↔ Base64 — Flash Emu Pro</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@700;800&display=swap');
+
+        :root {
+            --primary: #f2711c;
+            --bg: #0d0d0d;
+            --surface: #161616;
+            --surface2: #1f1f1f;
+            --border: #2a2a2a;
+            --text: #e8e8e8;
+            --text-dim: #666;
+            --green: #4caf50;
+            --red: #f44336;
+            --mono: 'JetBrains Mono', monospace;
+            --display: 'Syne', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--mono);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* noise texture overlay */
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+            pointer-events: none; z-index: 0; opacity: 0.4;
+        }
+
+        header {
+            padding: 24px 32px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative; z-index: 1;
+        }
+
+        .logo {
+            font-family: var(--display);
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.15em;
+            color: var(--primary);
+            text-transform: uppercase;
+        }
+
+        .logo span { color: var(--text-dim); font-weight: 700; }
+
+        .header-title {
+            font-family: var(--display);
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: 0.05em;
+        }
+
+        .main {
+            flex: 1;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            position: relative; z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Direction toggle */
+        .direction-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .dir-btn {
+            flex: 1;
+            padding: 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            letter-spacing: 0.05em;
+        }
+        .dir-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+        .dir-btn:not(.active):hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .swap-arrow {
+            font-size: 20px;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: transform 0.3s, color 0.15s;
+            padding: 8px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .swap-arrow:hover { color: var(--primary); border-color: var(--primary); transform: rotate(180deg); }
+
+        /* Panels */
+        .panels {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 640px) {
+            .panels { grid-template-columns: 1fr; }
+            .main { padding: 16px; }
+        }
+
+        .panel {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .panel-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            padding: 0 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-label .badge {
+            font-size: 9px;
+            padding: 2px 7px;
+            border-radius: 3px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            letter-spacing: 0.1em;
+            font-weight: 600;
+        }
+
+        textarea {
+            width: 100%;
+            height: 280px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: var(--mono);
+            font-size: 12px;
+            line-height: 1.6;
+            padding: 16px;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.15s;
+            tab-size: 2;
+        }
+        textarea:focus { border-color: var(--primary); }
+        textarea.error { border-color: var(--red); }
+        textarea.success { border-color: var(--green); }
+        textarea::placeholder { color: var(--text-dim); }
+
+        /* Action row */
+        .action-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 8px;
+            font-family: var(--mono);
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover { background: #e06010; transform: translateY(-1px); }
+        .btn-primary:active { transform: translateY(0); }
+
+        .btn-ghost {
+            background: var(--surface);
+            color: var(--text-dim);
+            border: 1px solid var(--border);
+        }
+        .btn-ghost:hover { border-color: var(--primary); color: var(--primary); }
+
+        .btn-green {
+            background: var(--green);
+            color: white;
+        }
+        .btn-green:hover { background: #43a047; }
+
+        /* Status bar */
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 11px;
+            min-height: 40px;
+        }
+
+        .status-dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: var(--text-dim);
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+        .status-dot.ok { background: var(--green); box-shadow: 0 0 6px var(--green); }
+        .status-dot.err { background: var(--red); box-shadow: 0 0 6px var(--red); }
+        .status-dot.info { background: var(--primary); box-shadow: 0 0 6px var(--primary); }
+
+        .status-text { color: var(--text-dim); flex: 1; }
+
+        .char-count { color: var(--text-dim); font-size: 10px; margin-left: auto; }
+
+        /* Pretty print toggle */
+        .options-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-dim);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .toggle {
+            width: 34px; height: 18px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            position: relative;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+        .toggle.on { background: var(--primary); border-color: var(--primary); }
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 12px; height: 12px;
+            background: white;
+            border-radius: 50%;
+            top: 2px; left: 2px;
+            transition: left 0.2s;
+        }
+        .toggle.on::after { left: 18px; }
+
+        /* Copy flash */
+        @keyframes flashGreen {
+            0% { border-color: var(--green); }
+            100% { border-color: var(--border); }
+        }
+        .flash { animation: flashGreen 0.6s ease; }
+
+        /* Scrollbar */
+        textarea::-webkit-scrollbar { width: 4px; }
+        textarea::-webkit-scrollbar-track { background: transparent; }
+        textarea::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">Flash Emu Pro <span>/ Tools</span></div>
+    <div class="header-title">JSON ↔ Base64</div>
+    <div style="width: 120px;"></div>
+</header>
+
+<div class="main">
+
+    <!-- Direction toggle -->
+    <div class="direction-row">
+        <button class="dir-btn active" id="dir-encode" onclick="setDir('encode')">JSON → Base64</button>
+        <div class="swap-arrow" onclick="swapDir()" title="Swap direction">⇄</div>
+        <button class="dir-btn" id="dir-decode" onclick="setDir('decode')">Base64 → JSON</button>
+    </div>
+
+    <!-- Options -->
+    <div class="options-row">
+        <label class="toggle-row" onclick="togglePretty()">
+            <div class="toggle on" id="pretty-toggle"></div>
+            <span>Pretty Print JSON</span>
+        </label>
+        <label class="toggle-row" onclick="toggleAuto()">
+            <div class="toggle on" id="auto-toggle"></div>
+            <span>Auto Convert</span>
+        </label>
+    </div>
+
+    <!-- Panels -->
+    <div class="panels">
+        <div class="panel">
+            <div class="panel-label">
+                <span id="label-left">JSON Input</span>
+                <span class="badge" id="badge-left">JSON</span>
+            </div>
+            <textarea id="input-area" placeholder='Paste your JSON here...&#10;&#10;[&#10;  { "type": "button", "name": "Jump", ... }&#10;]' oninput="onInputChange()" spellcheck="false"></textarea>
+            <div class="action-row">
+                <button class="btn btn-ghost" onclick="clearInput()">✕ Clear</button>
+                <button class="btn btn-ghost" onclick="pasteInput()">⎘ Paste</button>
+                <button class="btn btn-ghost" onclick="loadFromStorage()">💾 From Storage</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-label">
+                <span id="label-right">Base64 Output</span>
+                <span class="badge" id="badge-right">B64</span>
+            </div>
+            <textarea id="output-area" placeholder="Output will appear here..." readonly spellcheck="false"></textarea>
+            <div class="action-row">
+                <button class="btn btn-primary" onclick="convert()">▶ Convert</button>
+                <button class="btn btn-ghost" onclick="copyOutput()">⎘ Copy</button>
+                <button class="btn btn-green" onclick="saveToStorage()">💾 Save to App</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status bar -->
+    <div class="status-bar">
+        <div class="status-dot" id="status-dot"></div>
+        <span class="status-text" id="status-text">Ready. Paste JSON or Base64 above.</span>
+        <span class="char-count" id="char-count"></span>
+    </div>
+
+</div>
+
+<script>
+    let direction = 'encode'; // 'encode' = JSON→B64, 'decode' = B64→JSON
+    let prettyPrint = true;
+    let autoConvert = true;
+    let autoTimer = null;
+
+    function setDir(dir) {
+        direction = dir;
+        document.getElementById('dir-encode').classList.toggle('active', dir === 'encode');
+        document.getElementById('dir-decode').classList.toggle('active', dir === 'decode');
+
+        if (dir === 'encode') {
+            document.getElementById('label-left').innerText = 'JSON Input';
+            document.getElementById('badge-left').innerText = 'JSON';
+            document.getElementById('label-right').innerText = 'Base64 Output';
+            document.getElementById('badge-right').innerText = 'B64';
+            document.getElementById('input-area').placeholder = 'Paste your JSON here...\n\n[\n  { "type": "button", "name": "Jump", ... }\n]';
+            document.getElementById('output-area').placeholder = 'Base64 output will appear here...';
+        } else {
+            document.getElementById('label-left').innerText = 'Base64 Input';
+            document.getElementById('badge-left').innerText = 'B64';
+            document.getElementById('label-right').innerText = 'JSON Output';
+            document.getElementById('badge-right').innerText = 'JSON';
+            document.getElementById('input-area').placeholder = 'Paste your Base64 string here...';
+            document.getElementById('output-area').placeholder = 'Decoded JSON will appear here...';
+        }
+
+        setStatus('idle', 'Direction changed. Ready to convert.');
+        if (document.getElementById('input-area').value) convert();
+    }
+
+    function swapDir() {
+        // Also swap the text in the boxes
+        const inputVal = document.getElementById('input-area').value;
+        const outputVal = document.getElementById('output-area').value;
+        document.getElementById('input-area').value = outputVal;
+        setDir(direction === 'encode' ? 'decode' : 'encode');
+    }
+
+    function togglePretty() {
+        prettyPrint = !prettyPrint;
+        document.getElementById('pretty-toggle').classList.toggle('on', prettyPrint);
+        if (document.getElementById('input-area').value) convert();
+    }
+
+    function toggleAuto() {
+        autoConvert = !autoConvert;
+        document.getElementById('auto-toggle').classList.toggle('on', autoConvert);
+    }
+
+    function onInputChange() {
+        if (!autoConvert) return;
+        clearTimeout(autoTimer);
+        autoTimer = setTimeout(convert, 400);
+    }
+
+    function convert() {
+        const input = document.getElementById('input-area').value.trim();
+        const outputArea = document.getElementById('output-area');
+
+        if (!input) {
+            outputArea.value = '';
+            setStatus('idle', 'Ready. Paste input above.');
+            updateCharCount('');
+            return;
+        }
+
+        try {
+            if (direction === 'encode') {
+                // Validate JSON first
+                const parsed = JSON.parse(input);
+                const jsonStr = JSON.stringify(parsed); // compact for encoding
+                const b64 = btoa(unescape(encodeURIComponent(jsonStr)));
+                outputArea.value = b64;
+                outputArea.classList.remove('error'); outputArea.classList.add('success');
+                document.getElementById('input-area').classList.remove('error');
+                const items = Array.isArray(parsed) ? parsed.length + ' items' : 'object';
+                setStatus('ok', `✓ Encoded successfully — ${items} → ${b64.length} chars`);
+                updateCharCount(b64);
+            } else {
+                // Decode base64 → JSON
+                const jsonStr = decodeURIComponent(escape(atob(input)));
+                const parsed = JSON.parse(jsonStr);
+                const pretty = prettyPrint ? JSON.stringify(parsed, null, 2) : JSON.stringify(parsed);
+                outputArea.value = pretty;
+                outputArea.classList.remove('error'); outputArea.classList.add('success');
+                document.getElementById('input-area').classList.remove('error');
+                const items = Array.isArray(parsed) ? parsed.length + ' items' : 'object';
+                setStatus('ok', `✓ Decoded successfully — ${items} found`);
+                updateCharCount(pretty);
+            }
+        } catch (e) {
+            outputArea.value = '';
+            outputArea.classList.remove('success'); outputArea.classList.add('error');
+            document.getElementById('input-area').classList.add('error');
+
+            let msg = e.message;
+            // friendlier messages
+            if (direction === 'encode' && msg.includes('JSON')) msg = 'Invalid JSON: ' + msg;
+            if (direction === 'decode' && msg.includes('atob')) msg = 'Invalid Base64 string';
+            setStatus('err', '✗ ' + msg);
+            updateCharCount('');
+        }
+    }
+
+    function clearInput() {
+        document.getElementById('input-area').value = '';
+        document.getElementById('output-area').value = '';
+        document.getElementById('input-area').classList.remove('error');
+        document.getElementById('output-area').classList.remove('error', 'success');
+        setStatus('idle', 'Cleared.');
+        updateCharCount('');
+    }
+
+    async function pasteInput() {
+        try {
+            const text = await navigator.clipboard.readText();
+            document.getElementById('input-area').value = text;
+            onInputChange();
+            setStatus('info', 'Pasted from clipboard.');
+        } catch(e) {
+            setStatus('err', 'Clipboard read failed — paste manually.');
+        }
+    }
+
+    async function copyOutput() {
+        const val = document.getElementById('output-area').value;
+        if (!val) { setStatus('err', 'Nothing to copy.'); return; }
+        try {
+            await navigator.clipboard.writeText(val);
+            const area = document.getElementById('output-area');
+            area.classList.add('flash');
+            setTimeout(() => area.classList.remove('flash'), 600);
+            setStatus('ok', '✓ Copied to clipboard!');
+        } catch(e) {
+            setStatus('err', 'Copy failed — select text manually.');
+        }
+    }
+
+    function loadFromStorage() {
+        const saved = localStorage.getItem('flash_emu_layout');
+        if (!saved) {
+            setStatus('err', 'No layout found in app storage (flash_emu_layout).');
+            return;
+        }
+        try {
+            // Pretty print it in the input box
+            const parsed = JSON.parse(saved);
+            const pretty = prettyPrint ? JSON.stringify(parsed, null, 2) : JSON.stringify(parsed);
+            document.getElementById('input-area').value = pretty;
+            setDir('encode'); // switch to encode mode since we loaded JSON
+            convert();
+            setStatus('ok', `✓ Loaded layout from app storage — ${Array.isArray(parsed) ? parsed.length + ' items' : 'object'}`);
+        } catch(e) {
+            setStatus('err', 'Storage data is invalid JSON: ' + e.message);
+        }
+    }
+
+    function saveToStorage() {
+        const output = document.getElementById('output-area').value;
+        if (!output) { setStatus('err', 'Nothing to save — convert first.'); return; }
+
+        try {
+            if (direction === 'encode') {
+                // output is base64 — decode it first to validate, then save the JSON
+                const jsonStr = decodeURIComponent(escape(atob(output)));
+                JSON.parse(jsonStr); // validate
+                localStorage.setItem('flash_emu_layout', jsonStr);
+                setStatus('ok', '✓ Saved to app storage! Switch to Custom Layout mode in the app.');
+            } else {
+                // output is JSON
+                const parsed = JSON.parse(output);
+                localStorage.setItem('flash_emu_layout', JSON.stringify(parsed));
+                setStatus('ok', '✓ Saved to app storage! Switch to Custom Layout mode in the app.');
+            }
+        } catch(e) {
+            setStatus('err', 'Save failed: ' + e.message);
+        }
+    }
+
+    function setStatus(type, msg) {
+        const dot = document.getElementById('status-dot');
+        const text = document.getElementById('status-text');
+        dot.className = 'status-dot' + (type === 'ok' ? ' ok' : type === 'err' ? ' err' : type === 'info' ? ' info' : '');
+        text.innerText = msg;
+    }
+    // Init
+    setStatus('idle', 'Ready. Paste JSON or Base64 above.');
+</script>
+</body>
+</html>
