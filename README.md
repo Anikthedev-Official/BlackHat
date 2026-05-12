@@ -30,7 +30,7 @@ Don't settle for a fixed UI. Create your own controller:
 *   **Dual-Engine Architecture:** Switch between **Legacy (v2021)** for old-school compatibility and **Modern (v2026)** for the latest Ruffle features.
 *   **Turbo Mode (Potato Mode):** A one-tap boost that tries disables heavy realism effects to multiply your FPS on weak GPUs.
 *   **Realism Mode:** High-fidelity real-time mouse tracking for games that require precise "hover" events.
-*    **WARNING:** PLEASE DONT TRY ON LOWEND DEVICES (FOR RESOURCE EXPENSIVE GAMES) IT CONVERENTS FLASH TO SOME RUFFLE THING TO WASM OR SOEETIHNG IDK AND YOU HAVE YOUR TIHNG LOW END DEVICES DONT HANDLE THAT VERY WELL!!!!!!!!!!!!!!!!!
+*    **WARNING:** It is strongly recommended that users refrain from executing this software on low-end devices, particularly for resource-demanding games, as the Flash-to-WebAssembly conversion process may cause compatibility and performance issues.
 
 
 
@@ -62,7 +62,7 @@ Don't settle for a fixed UI. Create your own controller:
     cordova build android
 
 📂 Project Architecture
-
+```
 ├── www/
 │   ├── index.html          # Main Application Shell
 │   ├── config.html         # Visual Layout Editor
@@ -74,6 +74,11 @@ Don't settle for a fixed UI. Create your own controller:
 │       ├── v2021/          # Legacy Ruffle Engine (Stable for old games)
 │       └── v2026/          # Modern Ruffle Engine (Latest features)
 └── config.xml              # Cordova App Config
+```
+
+
+
+---
 
 🤝 Credits
 
