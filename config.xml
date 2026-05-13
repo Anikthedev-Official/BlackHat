@@ -1,5 +1,5 @@
-<?xml version='1.0' encoding='utf-8'?>
-<widget id="com.mustakim.flash" version="0.0.3" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<?xml version="1.0.0" encoding='utf-8'?>
+<widget id="com.mustakim.flash" version="0.0.4" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <name>BlackHat Pro</name>
     <description>
         Flash emulator for playing simple games and animations. Built with Cordova and JavaScript, it provides a nostalgic experience for Flash content on modern platforms.
