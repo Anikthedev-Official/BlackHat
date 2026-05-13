@@ -26,8 +26,8 @@
       "cordova-plugin-whitelist": {}
     },
     "platforms": [
-      "android",
-      "cordova-platform-nwjs"
+      "cordova-platform-nwjs",
+      "android"
     ]
   }
 }

@@ -10,36 +10,46 @@
     <content src="index.html" />
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
-    <allow-navigation href="*" />
-
-    <!-- Global preferences -->
     <preference name="Orientation" value="landscape" />
-    <preference name="Fullscreen" value="true" />
-    <preference name="DisallowOverscroll" value="true" />
-    <preference name="KeepRunning" value="true" />
-    <preference name="AndroidLaunchMode" value="singleTop" />
-    <preference name="HardwareAccelerated" value="true" />
-    <preference name="ShowTitle" value="false" />
-    <preference name="android-minSdkVersion" value="22" />
-    <preference name="android-targetSdkVersion" value="33" />
-
     <platform name="android">
-        <!-- regular icons -->
-        <icon density="ldpi"    src="resources/android/icon/drawable-ldpi-icon.png" />
-        <icon density="mdpi"    src="resources/android/icon/drawable-mdpi-icon.png" />
-        <icon density="hdpi"    src="resources/android/icon/drawable-hdpi-icon.png" />
-        <icon density="xhdpi"   src="resources/android/icon/drawable-xhdpi-icon.png" />
-        <icon density="xxhdpi"  src="resources/android/icon/drawable-xxhdpi-icon.png" />
+        <icon density="ldpi" src="resources/android/icon/drawable-ldpi-icon.png" />
+        <icon density="mdpi" src="resources/android/icon/drawable-mdpi-icon.png" />
+        <icon density="hdpi" src="resources/android/icon/drawable-hdpi-icon.png" />
+        <icon density="xhdpi" src="resources/android/icon/drawable-xhdpi-icon.png" />
+        <icon density="xxhdpi" src="resources/android/icon/drawable-xxhdpi-icon.png" />
         <icon density="xxxhdpi" src="resources/android/icon/drawable-xxxhdpi-icon.png" />
-
-        <!-- adaptive icons -->
-        <resource-file src="resources/android/xml/adaptive_icon.xml"
-                       target="app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml" />
-        <resource-file src="resources/android/xml/adaptive_icon.xml"
-                       target="app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml" />
-        <resource-file src="resources/android/values/colors.xml"
-                       target="app/src/main/res/values/ic_launcher_colors.xml" />
-        <resource-file src="resources/android/icon/drawable-xxxhdpi-icon.png"
-                       target="app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png" />
+        <icon foreground="resources/android/icon/foreground.png"
+          background="resources/android/icon/background.png"
+          density="xxxhdpi" />
+    </platform>
+    <platform name="ios">
+        <icon height="57" src="resources/ios/icon/icon.png" width="57" />
+        <icon height="114" src="resources/ios/icon/icon@2x.png" width="114" />
+        <icon height="20" src="resources/ios/icon/icon-20.png" width="20" />
+        <icon height="40" src="resources/ios/icon/icon-20@2x.png" width="40" />
+        <icon height="60" src="resources/ios/icon/icon-20@3x.png" width="60" />
+        <icon height="29" src="resources/ios/icon/icon-29.png" width="29" />
+        <icon height="58" src="resources/ios/icon/icon-29@2x.png" width="58" />
+        <icon height="87" src="resources/ios/icon/icon-29@3x.png" width="87" />
+        <icon height="48" src="resources/ios/icon/icon-24@2x.png" width="48" />
+        <icon height="55" src="resources/ios/icon/icon-27.5@2x.png" width="55" />
+        <icon height="88" src="resources/ios/icon/icon-44@2x.png" width="88" />
+        <icon height="172" src="resources/ios/icon/icon-86@2x.png" width="172" />
+        <icon height="196" src="resources/ios/icon/icon-98@2x.png" width="196" />
+        <icon height="216" src="resources/ios/icon/icon-108@2x.png" width="216" />
+        <icon height="40" src="resources/ios/icon/icon-40.png" width="40" />
+        <icon height="80" src="resources/ios/icon/icon-40@2x.png" width="80" />
+        <icon height="120" src="resources/ios/icon/icon-40@3x.png" width="120" />
+        <icon height="50" src="resources/ios/icon/icon-50.png" width="50" />
+        <icon height="100" src="resources/ios/icon/icon-50@2x.png" width="100" />
+        <icon height="60" src="resources/ios/icon/icon-60.png" width="60" />
+        <icon height="120" src="resources/ios/icon/icon-60@2x.png" width="120" />
+        <icon height="180" src="resources/ios/icon/icon-60@3x.png" width="180" />
+        <icon height="72" src="resources/ios/icon/icon-72.png" width="72" />
+        <icon height="144" src="resources/ios/icon/icon-72@2x.png" width="144" />
+        <icon height="76" src="resources/ios/icon/icon-76.png" width="76" />
+        <icon height="152" src="resources/ios/icon/icon-76@2x.png" width="152" />
+        <icon height="167" src="resources/ios/icon/icon-83.5@2x.png" width="167" />
+        <icon height="1024" src="resources/ios/icon/icon-1024.png" width="1024" />
     </platform>
 </widget>

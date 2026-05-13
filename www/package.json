@@ -1,0 +1,12 @@
+{
+  "name": "blackhat-pro",
+  "main": "index.html",
+  "version": "0.0.4",
+  "window": {
+    "title": "BlackHat Pro",
+    "width": 1280,
+    "height": 720,
+    "position": "center"
+  },
+  "chromium-args": "--disable-web-security"
+}

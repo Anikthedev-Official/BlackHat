@@ -1,7 +1,7 @@
 #!/bin/bash
 ACTION=${1:-run}
-NWJS="/home/mustakim/Flash/Emu/nwjs-cordova/pookie/nwjs"
-WWW=~/Flash/Emu/flash-emu/platforms/cordova-platform-nwjs/www
+NWJS="/home/mustakim/Flash/Emu/flash-emu/node_modules/cordova-platform-nwjs/pookie/nwjs"
+WWW=~/Flash/Emu/flash-emu/www
 
 cordova prepare nwjs
 
