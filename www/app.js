@@ -288,14 +288,9 @@ function showLoader(msg) {
        //           navigator.maxTouchPoints === 0 && 
         //          !navigator.userAgent.match(/Android|iPhone|iPad|iPod|Mobile/i) &&
         //          window.innerWidth > 600;
-    const isDesktop = (
-    window.process !== undefined || // NW.js
-    (
-        !navigator.userAgent.match(/Android|iPhone|iPad|iPod|Mobile|Samsung/i) &&
-        navigator.maxTouchPoints === 0 &&
-        window.innerWidth > 600
-    )
-);
+const isCordova = !!window.cordova;
+const isNWJS = typeof window.process === "object";
+const isDesktop = !isCordova && (isNWJS || !/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent));
         console.log("isDesktop:", isDesktop, "| ontouchstart:", ('ontouchstart' in window), "| maxTouchPoints:", navigator.maxTouchPoints, "| UA:", navigator.userAgent);
 
 if (isDesktop) {
@@ -695,37 +690,61 @@ async function loadGameFile(remotePath, title) {
     const isCached = localStorage.getItem(cacheKey) === 'true';
     let bytes;
 
-    if (isCached && window.cordova) {
+    // 🐒 CACHE LOAD (same logic)
+    if (isCached && isCordova) {
         updateLoader(`Loading ${title} from cache...`, 40);
         log(`Loading from cache: ${filename}`);
+
         try {
             bytes = await readFromDevice(filename);
-        } catch(e) {
+        } catch (e) {
             localStorage.removeItem(cacheKey);
             log(`Cache miss, re-downloading...`);
         }
     }
 
+    // 🚀 DOWNLOAD (FIXED FOR ALL PLATFORMS)
     if (!bytes) {
-        updateLoader(`Downloading ${title}... (first time only)`, 20);
-        const res = await fetch(remotePath);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const buffer = await res.arrayBuffer();
-        bytes = new Uint8Array(buffer);
+        updateLoader(`Downloading ${title}...`, 20);
 
-        if (window.cordova) {
+        if (isCordova) {
+            // 📱 CORDOVA MODE (plugin HTTP)
+            bytes = await new Promise((resolve, reject) => {
+                cordova.plugin.http.sendRequest(
+                    remotePath,
+                    { method: "get", responseType: "arraybuffer" },
+                    {},
+                    (res) => resolve(new Uint8Array(res.data)),
+                    (err) => reject(new Error(err.error || "HTTP failed"))
+                );
+            });
+
+        } else {
+            // 🖥️ DESKTOP / NWJS / BROWSER
+            const res = await fetch(remotePath);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+            const buffer = await res.arrayBuffer();
+            bytes = new Uint8Array(buffer);
+        }
+
+        // 💾 SAVE CACHE (Cordova only)
+        if (isCordova) {
             try {
                 await saveToDevice(filename, bytes);
                 localStorage.setItem(cacheKey, 'true');
                 log(`Cached: ${filename}`);
-            } catch(e) { log(`Cache save failed: ${e.message}`); }
+            } catch (e) {
+                log(`Cache save failed: ${e.message}`);
+            }
         }
     }
 
+    // 🎮 LOAD INTO PLAYER
     updateLoader(`Starting ${title}...`, 80);
     await currentPlayer.load({ data: bytes });
 
-    // AUTO letterbox — reads SWF dimensions and places black bars
+    // 📏 LETTERBOX FIX
     const dims = getSWFDimensions(bytes);
     if (dims) {
         log(`SWF: ${dims.width}x${dims.height}`);
