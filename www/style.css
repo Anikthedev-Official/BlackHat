@@ -48,7 +48,16 @@ body, html {
     transition: color 0.15s;
 }
 #header button:hover { color: var(--text); }
-
+#header {
+    transition: transform 0.35s ease, opacity 0.35s ease;
+    transform: translateY(0);
+    opacity: 1;
+}
+#header.hidden {
+    transform: translateY(-100%);
+    opacity: 0;
+    pointer-events: none;
+}
 /* settings panel — dark, orange only on borders and active elements */
 #settings-panel {
     position: fixed; top: 0; right: -320px; width: 300px; height: 100vh;
@@ -114,12 +123,22 @@ select:focus, input[type="text"]:focus {
 .theme-btn:active { transform: scale(0.9); }
 
 /* game screen */
+
 #game-screen {
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
     z-index: 1; background: #000;
     display: flex; justify-content: center; align-items: center;
 }
-#container { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; }
+
+#container {
+    width: 100%;
+    height: 100%;
+    background: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
 
 /* virtual cursor — orange dot, makes sense */
 #virtual-cursor {

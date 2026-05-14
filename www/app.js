@@ -89,24 +89,26 @@ async function initPlayer() {
         }
 
         const ruffle = window.RufflePlayer.newest();
-        currentPlayer = ruffle.createPlayer({
-            letterbox: true,
-            fitToContainer: true,
-            quality: "low",
-            warnOnUnsupportedContent: false,
-            logLevel: "error", // suppress Ruffle spam
-        });
+currentPlayer = ruffle.createPlayer({
+    letterbox: "on",        // forces black bars, never stretches
+    fitToContainer: true,
+    quality: "low",
+    warnOnUnsupportedContent: false,
+    logLevel: "error",
+});
 
-        // Resolution scale — 75% on high-DPI mobile, 100% on desktop
-        const resolutionScale = window.devicePixelRatio > 1 ? 0.75 : 1;
 
-        currentPlayer.style.width  = (window.innerWidth  * resolutionScale) + "px";
-        currentPlayer.style.height = (window.innerHeight * resolutionScale) + "px";
-        currentPlayer.style.transform = `scale(${1 / resolutionScale})`;
-        currentPlayer.style.transformOrigin = "top left";
-        currentPlayer.style.imageRendering = "pixelated";
 
-        document.getElementById("container").appendChild(currentPlayer);
+        currentPlayer.style.width = '100%';
+        currentPlayer.style.height = '100%';
+        currentPlayer.style.maxWidth = '100%';
+        currentPlayer.style.maxHeight = '100%';
+        currentPlayer.style.transform = 'none'; // remove the scale transform
+        currentPlayer.style.transformOrigin = 'center center';
+        currentPlayer.style.imageRendering = 'pixelated';
+      document.getElementById("container").appendChild(currentPlayer);
+
+
         updateLoader("Ready!", 100);
         log(`Player ready. Scale: ${resolutionScale * 100}% | DPR: ${window.devicePixelRatio}`);
 
@@ -134,6 +136,41 @@ window.onload = async () => {
             theme: 'theme-ruffle',
             mapping: 'wasd'
         };
+        // =====================================================
+// HEADER SWIPE TO HIDE
+// =====================================================
+const header = document.getElementById('header');
+let swipeStartY = null;
+let swipeStartX = null;
+let headerHidden = false;
+
+window.addEventListener('pointerdown', (e) => {
+    // ignore touches on controls, panels etc
+    if (e.target.closest('#settings-panel, #library-panel, #left-controls, #right-controls, #controls-layer')) return;
+    swipeStartY = e.clientY;
+    swipeStartX = e.clientX;
+}, { passive: true });
+
+window.addEventListener('pointerup', (e) => {
+    if (swipeStartY === null) return;
+    const dy = e.clientY - swipeStartY;
+    const dx = Math.abs(e.clientX - swipeStartX);
+    swipeStartY = null;
+    swipeStartX = null;
+
+    // must be more vertical than horizontal, and at least 40px
+    if (Math.abs(dy) < 40 || dx > Math.abs(dy)) return;
+
+    if (dy < 0 && !headerHidden) {
+        // swipe UP — hide header
+        headerHidden = true;
+        header.classList.add('hidden');
+    } else if (dy > 0 && headerHidden) {
+        // swipe DOWN — show header
+        headerHidden = false;
+        header.classList.remove('hidden');
+    }
+}, { passive: true });
 function showLoader(msg) {
     let el = document.getElementById('boot-loader');
     if (!el) {
@@ -569,7 +606,81 @@ function buildJoystick(item) {
         }
     });
 }
+async function loadGameFile(remotePath, title) {
+    const filename = remotePath.split('/').pop();
+    const cacheKey = 'cached_' + filename;
 
+    // check localStorage for cached flag
+    const isCached = localStorage.getItem(cacheKey) === 'true';
+
+    if (isCached && window.cordova) {
+        // load from device storage
+        updateLoader(`Loading ${title} from cache...`, 40);
+        log(`Loading from cache: ${filename}`);
+        try {
+            const bytes = await readFromDevice(filename);
+            await currentPlayer.load({ data: bytes });
+            return;
+        } catch(e) {
+            // cache miss — fall through to download
+            localStorage.removeItem(cacheKey);
+            log(`Cache miss for ${filename}, re-downloading...`);
+        }
+    }
+
+    // download it
+    updateLoader(`Downloading ${title}... (first time only)`, 20);
+    log(`Downloading: ${remotePath}`);
+    const res = await fetch(remotePath);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+    const buffer = await res.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+
+    updateLoader(`Saving ${title} to device...`, 70);
+
+    // save to device if cordova available
+    if (window.cordova) {
+        try {
+            await saveToDevice(filename, bytes);
+            localStorage.setItem(cacheKey, 'true');
+            log(`Cached: ${filename}`);
+        } catch(e) {
+            log(`Cache save failed: ${e.message}`);
+        }
+    }
+
+    await currentPlayer.load({ data: bytes });
+}
+
+function saveToDevice(filename, bytes) {
+    return new Promise((resolve, reject) => {
+        window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, (fs) => {
+            fs.root.getFile(filename, { create: true }, (fileEntry) => {
+                fileEntry.createWriter((writer) => {
+                    writer.onwriteend = () => resolve();
+                    writer.onerror = (e) => reject(e);
+                    writer.write(new Blob([bytes]));
+                }, reject);
+            }, reject);
+        }, reject);
+    });
+}
+
+function readFromDevice(filename) {
+    return new Promise((resolve, reject) => {
+        window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, (fs) => {
+            fs.root.getFile(filename, {}, (fileEntry) => {
+                fileEntry.file((file) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(new Uint8Array(reader.result));
+                    reader.onerror = reject;
+                    reader.readAsArrayBuffer(file);
+                }, reject);
+            }, reject);
+        }, reject);
+    });
+}
  // -------------------------------------------------------
 // 6. UPDATED loadLibrary — lazy initializes player on first game load
 // -------------------------------------------------------
@@ -596,44 +707,40 @@ async function loadLibrary() {
                 const card = document.createElement('div');
                 card.className = 'game-card';
                 card.innerText = game.title;
-                card.onclick = async () => {
-                    libraryPanel.classList.remove('open');
-                    showLoader(`Loading ${game.title}...`);
+    card.onclick = async () => {
+    libraryPanel.classList.remove('open');
+    showLoader(`Loading ${game.title}...`);
 
-                    // Switch engine if needed
-                    if (game.version) {
-                        document.getElementById('engine-select').value = game.version;
-                    }
+    if (game.version) document.getElementById('engine-select').value = game.version;
+    if (!currentPlayer || game.version) await initPlayer();
 
-                    // Lazy init — only create player when actually needed
-                    if (!currentPlayer) {
-                        await initPlayer();
-                    } else if (game.version) {
-                        await initPlayer(); // reinit if engine changed
-                    }
+    try {
+        if (game.file) {
+            await loadGameFile(game.file, game.title);
+        } else if (game.data) {
+            let b64;
+            if (game.data.endsWith('.txt') || game.data.includes('/')) {
+                const res = await fetch(game.data);
+                b64 = await res.text();
+            } else {
+                b64 = game.data;
+            }
+            const binary = atob(b64.trim());
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            await currentPlayer.load({ data: bytes });
+        } else if (game.url === 'local') {
+            hideLoader();
+            document.getElementById('file-input').click();
+            return;
+        } else if (game.url) {
+            await currentPlayer.load({ url: game.url });
+        }
+        log(`Loaded: ${game.title}`);
+    } catch(e) { log("Load error: " + e.message); }
 
-                    updateLoader(`Starting ${game.title}...`, 80);
-
-                    try {
-                        if (game.data) {
-                            const binary = atob(game.data);
-                            const bytes = new Uint8Array(binary.length);
-                            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-                            await currentPlayer.load({ data: bytes });
-                        } else if (game.url === 'local') {
-                            hideLoader();
-                            document.getElementById('file-input').click();
-                            return;
-                        } else {
-                            await currentPlayer.load({ url: game.url });
-                        }
-                        log(`Loaded: ${game.title}`);
-                    } catch(e) {
-                        log("Load error: " + e.message);
-                    }
-
-                    hideLoader();
-                };
+    hideLoader();
+};
                 gameList.appendChild(card);
             });
         });
@@ -775,7 +882,13 @@ updateLoader("Loading library...", 10);
 loadLibrary();
 buildLayoutControls();
 updateLoader("Ready!", 100);
-setTimeout(hideLoader, 500); // hide after half a second
+setTimeout(hideLoader, 700); 
+document.getElementById('clear-cache-btn').onclick = () => {
+    Object.keys(localStorage)
+        .filter(k => k.startsWith('cached_'))
+        .forEach(k => localStorage.removeItem(k));
+    log('Cache cleared — games will re-download on next play');
+};
 log("Ready. All systems active.");
 window.buildLayoutControls = buildLayoutControls;// expose for layout library
 
