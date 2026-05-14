@@ -10,6 +10,7 @@
     <content src="index.html" />
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
+    <allow-navigation href="*" />
     <preference name="Orientation" value="landscape" />
     <platform name="android">
         <icon density="ldpi" src="resources/android/icon/drawable-ldpi-icon.png" />
@@ -21,6 +22,7 @@
         <icon foreground="resources/android/icon/foreground.png"
           background="resources/android/icon/background.png"
           density="xxxhdpi" />
+          <preference name="AndroidInsecureFileModeEnabled" value="true" />
     </platform>
     <platform name="ios">
         <icon height="57" src="resources/ios/icon/icon.png" width="57" />
@@ -52,4 +54,6 @@
         <icon height="167" src="resources/ios/icon/icon-83.5@2x.png" width="167" />
         <icon height="1024" src="resources/ios/icon/icon-1024.png" width="1024" />
     </platform>
+    <allow-navigation href="*" />
+    <access origin="*" />
 </widget>

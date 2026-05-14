@@ -16,6 +16,7 @@
     "cordova-android": "^15.0.0",
     "cordova-platform-nwjs": "file:../nwjs-cordova",
     "cordova-plugin-file": "^8.1.3",
+    "cordova-plugin-httpd": "^0.9.3",
     "cordova-plugin-ionic-webview": "^5.0.1",
     "cordova-plugin-whitelist": "^1.3.5"
   },
@@ -23,7 +24,8 @@
     "plugins": {
       "cordova-plugin-file": {},
       "cordova-plugin-ionic-webview": {},
-      "cordova-plugin-whitelist": {}
+      "cordova-plugin-whitelist": {},
+      "cordova-plugin-httpd": {}
     },
     "platforms": [
       "cordova-platform-nwjs",
