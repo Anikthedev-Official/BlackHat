@@ -64,7 +64,90 @@ async function loadEngine(version) {
         document.head.appendChild(script);
     });
 }
+// =====================================================
+// SWF DIMENSION READER — reads width/height from binary
+// =====================================================
+function getSWFDimensions(bytes) {
+    try {
+        // SWF header: 3 bytes signature + 1 byte version + 4 bytes file length
+        // then RECT structure (variable length, bit-packed)
+        const offset = 8; // skip to RECT
+        const firstByte = bytes[offset];
+        const nBits = firstByte >> 3; // top 5 bits = number of bits per value
 
+        // read enough bytes for the RECT
+        let bitPos = 5; // already consumed 5 bits
+        function readBits(n) {
+            let val = 0;
+            for (let i = 0; i < n; i++) {
+                const byteIdx = offset + Math.floor(bitPos / 8);
+                const bitIdx = 7 - (bitPos % 8);
+                val = (val << 1) | ((bytes[byteIdx] >> bitIdx) & 1);
+                bitPos++;
+            }
+            return val;
+        }
+
+        // RECT has 4 values: Xmin, Xmax, Ymin, Ymax (in twips, 1 twip = 1/20 pixel)
+        const xMin = readBits(nBits);
+        const xMax = readBits(nBits);
+        const yMin = readBits(nBits);
+        const yMax = readBits(nBits);
+
+        const width  = Math.round((xMax - xMin) / 20);
+        const height = Math.round((yMax - yMin) / 20);
+
+        return { width, height };
+    } catch(e) {
+        log("Could not read SWF dimensions: " + e.message);
+        return null;
+    }
+}
+
+// =====================================================
+// BLACK BAR LETTERBOX — places exact black divs
+// =====================================================
+function applyLetterbox(gameWidth, gameHeight) {
+    // remove old bars
+    document.querySelectorAll('.letterbox-bar').forEach(el => el.remove());
+
+    const screenW = window.innerWidth;
+    const screenH = window.innerHeight;
+
+    const scaleX = screenW / gameWidth;
+    const scaleY = screenH / gameHeight;
+    const scale  = Math.min(scaleX, scaleY); // fit inside screen
+
+    const scaledW = Math.round(gameWidth  * scale);
+    const scaledH = Math.round(gameHeight * scale);
+
+    const padX = Math.round((screenW - scaledW) / 2);
+    const padY = Math.round((screenH - scaledH) / 2);
+
+    log(`Game: ${gameWidth}x${gameHeight} → scaled: ${scaledW}x${scaledH} | bars: ${padX}px sides, ${padY}px top/bottom`);
+
+    function makeBar(style) {
+        const bar = document.createElement('div');
+        bar.className = 'letterbox-bar';
+        bar.style.cssText = `
+            position: fixed;
+            background: #000;
+            z-index: 500;
+            pointer-events: none;
+            ${style}
+        `;
+        document.body.appendChild(bar);
+    }
+
+    if (padX > 0) {
+        makeBar(`top:0; left:0; width:${padX}px; height:100%;`);
+        makeBar(`top:0; right:0; width:${padX}px; height:100%;`);
+    }
+    if (padY > 0) {
+        makeBar(`top:0; left:0; width:100%; height:${padY}px;`);
+        makeBar(`bottom:0; left:0; width:100%; height:${padY}px;`);
+    }
+}
 // -------------------------------------------------------
 // 3. REPLACE initPlayer() with this performance version
 //    Has: lazy loading, resolution scale, preload hint,
@@ -609,48 +692,45 @@ function buildJoystick(item) {
 async function loadGameFile(remotePath, title) {
     const filename = remotePath.split('/').pop();
     const cacheKey = 'cached_' + filename;
-
-    // check localStorage for cached flag
     const isCached = localStorage.getItem(cacheKey) === 'true';
+    let bytes;
 
     if (isCached && window.cordova) {
-        // load from device storage
         updateLoader(`Loading ${title} from cache...`, 40);
         log(`Loading from cache: ${filename}`);
         try {
-            const bytes = await readFromDevice(filename);
-            await currentPlayer.load({ data: bytes });
-            return;
+            bytes = await readFromDevice(filename);
         } catch(e) {
-            // cache miss — fall through to download
             localStorage.removeItem(cacheKey);
-            log(`Cache miss for ${filename}, re-downloading...`);
+            log(`Cache miss, re-downloading...`);
         }
     }
 
-    // download it
-    updateLoader(`Downloading ${title}... (first time only)`, 20);
-    log(`Downloading: ${remotePath}`);
-    const res = await fetch(remotePath);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!bytes) {
+        updateLoader(`Downloading ${title}... (first time only)`, 20);
+        const res = await fetch(remotePath);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const buffer = await res.arrayBuffer();
+        bytes = new Uint8Array(buffer);
 
-    const buffer = await res.arrayBuffer();
-    const bytes = new Uint8Array(buffer);
-
-    updateLoader(`Saving ${title} to device...`, 70);
-
-    // save to device if cordova available
-    if (window.cordova) {
-        try {
-            await saveToDevice(filename, bytes);
-            localStorage.setItem(cacheKey, 'true');
-            log(`Cached: ${filename}`);
-        } catch(e) {
-            log(`Cache save failed: ${e.message}`);
+        if (window.cordova) {
+            try {
+                await saveToDevice(filename, bytes);
+                localStorage.setItem(cacheKey, 'true');
+                log(`Cached: ${filename}`);
+            } catch(e) { log(`Cache save failed: ${e.message}`); }
         }
     }
 
+    updateLoader(`Starting ${title}...`, 80);
     await currentPlayer.load({ data: bytes });
+
+    // AUTO letterbox — reads SWF dimensions and places black bars
+    const dims = getSWFDimensions(bytes);
+    if (dims) {
+        log(`SWF: ${dims.width}x${dims.height}`);
+        applyLetterbox(dims.width, dims.height);
+    }
 }
 
 function saveToDevice(filename, bytes) {
@@ -785,10 +865,24 @@ async function loadLibrary() {
         document.querySelectorAll('.theme-btn').forEach(btn => {
             btn.onclick = () => { document.body.className = btn.dataset.theme; };
         });
-        document.getElementById('load-url-btn').onclick = () => {
-            const url = document.getElementById('url-input').value;
-            if (url) currentPlayer.load({ url: url }).catch(() => alert("CORS block"));
-        };
+document.getElementById('load-url-btn').onclick = async () => {
+    const url = document.getElementById('url-input').value;
+    if (!url) return;
+    showLoader("Loading from URL...");
+    if (!currentPlayer) await initPlayer();
+    try {
+        const res = await fetch(url);
+        const buffer = await res.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        await currentPlayer.load({ data: bytes });
+        const dims = getSWFDimensions(bytes);
+        if (dims) applyLetterbox(dims.width, dims.height);
+    } catch(e) {
+        // CORS fallback — can't read bytes but at least try to play
+        await currentPlayer.load({ url: url }).catch(() => alert("CORS block"));
+    }
+    hideLoader();
+};;
 
         // Layout editor button
         document.getElementById('open-editor-btn').onclick = () => {
@@ -860,15 +954,21 @@ async function loadLibrary() {
             if (appState.realism === 'on') Dispatcher.moveMouse(e.clientX, e.clientY);
         };
 
-        // File loading
-        const fileInput = document.getElementById('file-input');
-        document.getElementById('select-swf-btn').onclick = () => fileInput.click();
-        fileInput.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const buffer = await file.arrayBuffer();
-            await currentPlayer.load({ data: new Uint8Array(buffer) });
-        };
+// File loading
+const fileInput = document.getElementById('file-input');
+document.getElementById('select-swf-btn').onclick = () => fileInput.click();
+fileInput.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    showLoader(`Loading ${file.name}...`);
+    if (!currentPlayer) await initPlayer();
+    const buffer = await file.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    await currentPlayer.load({ data: bytes });
+    const dims = getSWFDimensions(bytes);
+    if (dims) applyLetterbox(dims.width, dims.height);
+    hideLoader();
+};
 
         // =====================================================
         // BOOT
