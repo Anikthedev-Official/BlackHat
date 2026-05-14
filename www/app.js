@@ -268,7 +268,7 @@ function showLoader(msg) {
             transition: opacity 0.3s;
         `;
         el.innerHTML = `
-            <div style="font-size:28px; font-weight:bold; letter-spacing:0.1em;">⚡ FLASH EMU PRO</div>
+            <div style="font-size:28px; font-weight:bold; letter-spacing:0.1em;">BLACKHAT <span>PRO</span></div>
             <div id="boot-loader-msg" style="font-size:14px; opacity:0.7;">Loading...</div>
             <div style="width:200px; height:3px; background:#222; border-radius:2px; overflow:hidden; margin-top:8px;">
                 <div id="boot-loader-bar" style="height:100%; width:0%; background:#f2711c; transition:width 0.3s;"></div>
