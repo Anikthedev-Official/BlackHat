@@ -388,7 +388,17 @@
     let prettyPrint = true;
     let autoConvert = true;
     let autoTimer = null;
+function updateCharCount(val) {
+    const el = document.getElementById('char-count');
+    if (!el) return;
 
+    if (!val) {
+        el.innerText = '';
+        return;
+    }
+
+    el.innerText = `${val.length} chars`;
+}
     function setDir(dir) {
         direction = dir;
         document.getElementById('dir-encode').classList.toggle('active', dir === 'encode');
