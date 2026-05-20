@@ -25,7 +25,32 @@ if ('serviceWorker' in navigator) {
         .then(() => console.log('SW registered'))
         .catch(e => console.log('SW failed:', e));
 }
-let currentPlayer = null;
+window.currentPlayer = null;
+function showLoader(msg) {
+    let el = document.getElementById('boot-loader');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'boot-loader';
+        el.style.cssText = `
+            position:fixed; inset:0; background:#000;
+            display:flex; flex-direction:column;
+            justify-content:center; align-items:center;
+            z-index:9998; color:#f2711c;
+            font-family:sans-serif; gap:12px;
+            transition: opacity 0.3s;
+        `;
+        el.innerHTML = `
+            <div style="font-size:28px; font-weight:bold; letter-spacing:0.1em;">BLACKHAT <span>PRO</span></div>
+            <div id="boot-loader-msg" style="font-size:14px; opacity:0.7;">Loading...</div>
+            <div style="width:200px; height:3px; background:#222; border-radius:2px; overflow:hidden; margin-top:8px;">
+                <div id="boot-loader-bar" style="height:100%; width:0%; background:#f2711c; transition:width 0.3s;"></div>
+            </div>
+        `;
+        document.body.appendChild(el);
+    }
+    document.getElementById('boot-loader-msg').innerText = msg;
+    return el;
+}
 function updateLoader(msg, pct) {
     const el = document.getElementById('boot-loader');
     if (!el) return;
@@ -43,7 +68,7 @@ function hideLoader() {
 // --- ENGINE LOADING SYSTEM ---
 async function loadEngine(version) {
     log(`Requesting Engine ${version}...`);
-    if (currentPlayer) { currentPlayer.remove(); currentPlayer = null; }
+    if (window.currentPlayer) { window.currentPlayer.remove(); window.currentPlayer = null; }
     const oldScript = document.getElementById('ruffle-script');
     if (oldScript) oldScript.remove();
 
@@ -96,7 +121,7 @@ async function initPlayer() {
         }
 
         const ruffle = window.RufflePlayer.newest();
-currentPlayer = ruffle.createPlayer({
+window.currentPlayer = ruffle.createPlayer({
     letterbox: "on",        // forces black bars, never stretches
     fitToContainer: true,
     quality: "low",
@@ -106,14 +131,14 @@ currentPlayer = ruffle.createPlayer({
 
 
 
-        currentPlayer.style.width = '100%';
-        currentPlayer.style.height = '100%';
-        currentPlayer.style.maxWidth = '100%';
-        currentPlayer.style.maxHeight = '100%';
-        currentPlayer.style.transform = 'none'; // remove the scale transform
-        currentPlayer.style.transformOrigin = 'center center';
-        currentPlayer.style.imageRendering = 'pixelated';
-      document.getElementById("container").appendChild(currentPlayer);
+        window.currentPlayer.style.width = '100%';
+        window.currentPlayer.style.height = '100%';
+        window.currentPlayer.style.maxWidth = '100%';
+        window.currentPlayer.style.maxHeight = '100%';
+        window.currentPlayer.style.transform = 'none'; // remove the scale transform
+        window.currentPlayer.style.transformOrigin = 'center center';
+        window.currentPlayer.style.imageRendering = 'pixelated';
+      document.getElementById("container").appendChild(window.currentPlayer);
 
 
         updateLoader("Ready!", 100);
@@ -185,31 +210,7 @@ window.addEventListener('pointerup', (e) => {
         header.classList.remove('hidden');
     }
 }, { passive: true });
-function showLoader(msg) {
-    let el = document.getElementById('boot-loader');
-    if (!el) {
-        el = document.createElement('div');
-        el.id = 'boot-loader';
-        el.style.cssText = `
-            position:fixed; inset:0; background:#000;
-            display:flex; flex-direction:column;
-            justify-content:center; align-items:center;
-            z-index:9998; color:#f2711c;
-            font-family:sans-serif; gap:12px;
-            transition: opacity 0.3s;
-        `;
-        el.innerHTML = `
-            <div style="font-size:28px; font-weight:bold; letter-spacing:0.1em;">BLACKHAT <span>PRO</span></div>
-            <div id="boot-loader-msg" style="font-size:14px; opacity:0.7;">Loading...</div>
-            <div style="width:200px; height:3px; background:#222; border-radius:2px; overflow:hidden; margin-top:8px;">
-                <div id="boot-loader-bar" style="height:100%; width:0%; background:#f2711c; transition:width 0.3s;"></div>
-            </div>
-        `;
-        document.body.appendChild(el);
-    }
-    document.getElementById('boot-loader-msg').innerText = msg;
-    return el;
-}
+
 
 
         // =====================================================
@@ -335,7 +336,7 @@ if (Platform.isDesktop) {
         // =====================================================
         const Dispatcher = {
             getCanvas: () => {
-                const p = currentPlayer;
+                const p = window.currentPlayer;
                 if (!p) return null;
                 return (p.shadowRoot) ? p.shadowRoot.querySelector('canvas') : p.querySelector('canvas');
             },
@@ -683,7 +684,7 @@ async function loadGameFile(remotePath, title) {
 
     // 🎮 LOAD INTO FLASH PLAYER
     updateLoader(`Starting ${title}...`, 80);
-    await currentPlayer.load({ data: bytes });
+    await window.currentPlayer.load({ data: bytes });
 
     // 📏 LETTERBOX FIX
     const dims = getSWFDimensions(bytes);
@@ -752,7 +753,7 @@ async function loadLibrary() {
     showLoader(`Loading ${game.title}...`);
 
     if (game.version) document.getElementById('engine-select').value = game.version;
-    if (!currentPlayer || game.version) await initPlayer();
+    if (!window.currentPlayer || game.version) await initPlayer();
 
     try {
         if (game.file) {
@@ -768,13 +769,13 @@ async function loadLibrary() {
             const binary = atob(b64.trim());
             const bytes = new Uint8Array(binary.length);
             for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-            await currentPlayer.load({ data: bytes });
+            await window.currentPlayer.load({ data: bytes });
         } else if (game.url === 'local') {
             hideLoader();
             document.getElementById('file-input').click();
             return;
         } else if (game.url) {
-            await currentPlayer.load({ url: game.url });
+            await window.currentPlayer.load({ url: game.url });
         }
         log(`Loaded: ${game.title}`);
     } catch(e) { log("Load error: " + e.message); }
@@ -829,17 +830,17 @@ document.getElementById('load-url-btn').onclick = async () => {
     const url = document.getElementById('url-input').value;
     if (!url) return;
     showLoader("Loading from URL...");
-    if (!currentPlayer) await initPlayer();
+    if (!window.currentPlayer) await initPlayer();
     try {
         const res = await fetch(url);
         const buffer = await res.arrayBuffer();
         const bytes = new Uint8Array(buffer);
-        await currentPlayer.load({ data: bytes });
+        await window.currentPlayer.load({ data: bytes });
         const dims = getSWFDimensions(bytes);
         if (dims) applyLetterbox(dims.width, dims.height);
     } catch(e) {
         // CORS fallback — can't read bytes but at least try to play
-        await currentPlayer.load({ url: url }).catch(() => alert("CORS block"));
+        await window.currentPlayer.load({ url: url }).catch(() => alert("CORS block"));
     }
     hideLoader();
 };;
@@ -921,10 +922,10 @@ fileInput.onchange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     showLoader(`Loading ${file.name}...`);
-    if (!currentPlayer) await initPlayer();
+    if (!window.currentPlayer) await initPlayer();
     const buffer = await file.arrayBuffer();
     const bytes = new Uint8Array(buffer);
-    await currentPlayer.load({ data: bytes });
+    await window.currentPlayer.load({ data: bytes });
     const dims = getSWFDimensions(bytes);
     if (dims) applyLetterbox(dims.width, dims.height);
     hideLoader();
@@ -965,6 +966,8 @@ buildLayoutControls();
 updateLoader("Ready!", 100);
 setTimeout(hideLoader, 700); 
 initGlobalLibrary();
+initGlobalGameLibrary();
+
 
 log("Ready. All systems active.");
 window.buildLayoutControls = buildLayoutControls;// expose for layout library

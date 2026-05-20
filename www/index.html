@@ -47,7 +47,10 @@ document.addEventListener('deviceready', function () {
     <div id="header">
         <div id="app-title">BLACKHAT <span>PRO</span></div>
            <button id="library-toggle">Library</button>
-           <button id="global-library-btn">🌐 Library</button>
+           <button id="global-library-btn">🌐 Layout Library</button>
+           <button id="global-games-btn">
+    🌐 Games Library
+</button>
         <button id="settings-toggle">Settings</button>
     </div>
 <div id="library-panel">
@@ -204,6 +207,7 @@ document.addEventListener('deviceready', function () {
      load library presets before app.js -->
     <script src="layout-library.js"></script>
     <script src="global-library-client.js"></script>
+    <script src="global-games-client.js"></script>
     <script>initLayoutLibrary();</script>
     <script src="app.js"> </script>
 </body>
