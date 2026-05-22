@@ -638,89 +638,142 @@ async function getSWF(url, onProgress = () => {}) {
     if (!res.ok) throw new Error("HTTP " + res.status);
     return new Uint8Array(await res.arrayBuffer());
 }
-async function loadGameFile(remotePath, title) {
-    const filename = remotePath.split('/').pop();
-    const cacheKey = 'cached_' + filename;
-    const isCached = localStorage.getItem(cacheKey) === 'true';
+// =====================================================
+// PERSISTENT SWF CACHE — IndexedDB
+// Survives app restarts, works on web AND Cordova
+// =====================================================
 
+const SWFCache = {
+    db: null,
+
+    async open() {
+        if (this.db) return this.db;
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open('blackhat-swf-cache', 1);
+            req.onupgradeneeded = (e) => {
+                e.target.result.createObjectStore('swfs', { keyPath: 'filename' });
+            };
+            req.onsuccess = (e) => { this.db = e.target.result; resolve(this.db); };
+            req.onerror   = () => reject(req.error);
+        });
+    },
+
+    async save(filename, bytes) {
+        const db    = await this.open();
+        return new Promise((resolve, reject) => {
+            const tx    = db.transaction('swfs', 'readwrite');
+            const store = tx.objectStore('swfs');
+            const req   = store.put({ filename, bytes, savedAt: Date.now() });
+            req.onsuccess = () => resolve();
+            req.onerror   = () => reject(req.error);
+        });
+    },
+
+    async load(filename) {
+        const db    = await this.open();
+        return new Promise((resolve, reject) => {
+            const tx    = db.transaction('swfs', 'readonly');
+            const store = tx.objectStore('swfs');
+            const req   = store.get(filename);
+            req.onsuccess = () => resolve(req.result?.bytes || null);
+            req.onerror   = () => reject(req.error);
+        });
+    },
+
+    async delete(filename) {
+        const db    = await this.open();
+        return new Promise((resolve, reject) => {
+            const tx    = db.transaction('swfs', 'readwrite');
+            const store = tx.objectStore('swfs');
+            const req   = store.delete(filename);
+            req.onsuccess = () => resolve();
+            req.onerror   = () => reject(req.error);
+        });
+    },
+
+    async list() {
+        const db    = await this.open();
+        return new Promise((resolve, reject) => {
+            const tx    = db.transaction('swfs', 'readonly');
+            const store = tx.objectStore('swfs');
+            const req   = store.getAll();
+            req.onsuccess = () => resolve(req.result.map(r => ({
+                filename: r.filename,
+                sizeMB:   (r.bytes.byteLength / 1024 / 1024).toFixed(1),
+                savedAt:  r.savedAt
+            })));
+            req.onerror = () => reject(req.error);
+        });
+    },
+
+    async clearAll() {
+        const db    = await this.open();
+        return new Promise((resolve, reject) => {
+            const tx    = db.transaction('swfs', 'readwrite');
+            const store = tx.objectStore('swfs');
+            const req   = store.clear();
+            req.onsuccess = () => resolve();
+            req.onerror   = () => reject(req.error);
+        });
+    }
+};
+async function loadGameFile(remotePath, title) {
+    // Generate a clean filename for the database key
+    const filename = remotePath.split('/').pop().replace(/[^a-z0-9.]/gi, '_');
+    
     let bytes;
 
-    // 🐒 LOAD FROM DEVICE CACHE (Cordova only)
-    if (isCached && Platform.isCordova) {
-        updateLoader(`Loading ${title} from cache...`, 40);
-        log(`Cache hit: ${filename}`);
-
-        try {
-            bytes = await readFromDevice(filename);
-        } catch (e) {
-            localStorage.removeItem(cacheKey);
-            log("Cache miss, re-downloading...");
+    // 1. TRY LOADING FROM INDEXEDDB CACHE
+    updateLoader(`Checking cache...`, 10);
+    try {
+        bytes = await SWFCache.load(filename);
+        if (bytes) {
+            log(`Cache Hit: ${title}`);
+            updateLoader(`Loading ${title} from local storage...`, 40);
         }
+    } catch (e) {
+        log("Cache read error: " + e.message);
     }
 
-    // 🚀 DOWNLOAD IF NOT CACHED
+    // 2. DOWNLOAD IF NOT IN CACHE
     if (!bytes) {
         updateLoader(`Downloading ${title}...`, 20);
+        log(`Downloading from: ${remotePath}`);
 
         try {
             bytes = await getSWF(remotePath, (p) => {
-    updateLoader(`Downloading... ${p}%`, p);
-});
+                updateLoader(`Downloading... ${p}%`, p);
+            });
+
+            // 3. SAVE TO INDEXEDDB CACHE
+            if (bytes) {
+                await SWFCache.save(filename, bytes);
+                log(`Saved to IndexedDB: ${filename}`);
+            }
         } catch (e) {
             throw new Error("Download failed: " + e.message);
         }
-
-        // 💾 SAVE CACHE (Cordova only)
-        if (Platform.isCordova) {
-            try {
-                await saveToDevice(filename, bytes);
-                localStorage.setItem(cacheKey, 'true');
-                log(`Cached: ${filename}`);
-            } catch (e) {
-                log("Cache save failed: " + e.message);
-            }
-        }
     }
 
-    // 🎮 LOAD INTO FLASH PLAYER
-    updateLoader(`Starting ${title}...`, 80);
-    await window.currentPlayer.load({ data: bytes });
+    // 4. ENSURE PLAYER IS READY
+    if (!window.currentPlayer) {
+        log("Initializing Flash Engine...");
+        await initPlayer();
+    }
+
+    // 5. LOAD INTO FLASH PLAYER
+    updateLoader(`Starting ${title}...`, 85);
+    await window.currentPlayer.load({ 
+        data: bytes,
+        backgroundColor: "#000000"
+    });
 
     // 📏 LETTERBOX FIX
     const dims = getSWFDimensions(bytes);
     if (dims) {
         log(`SWF: ${dims.width}x${dims.height}`);
-        applyLetterbox(dims.width, dims.height);
+        if (typeof applyLetterbox === 'function') applyLetterbox(dims.width, dims.height);
     }
-}
-
-function saveToDevice(filename, bytes) {
-    return new Promise((resolve, reject) => {
-        window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, (fs) => {
-            fs.root.getFile(filename, { create: true }, (fileEntry) => {
-                fileEntry.createWriter((writer) => {
-                    writer.onwriteend = () => resolve();
-                    writer.onerror = (e) => reject(e);
-                    writer.write(new Blob([bytes]));
-                }, reject);
-            }, reject);
-        }, reject);
-    });
-}
-
-function readFromDevice(filename) {
-    return new Promise((resolve, reject) => {
-        window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, (fs) => {
-            fs.root.getFile(filename, {}, (fileEntry) => {
-                fileEntry.file((file) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(new Uint8Array(reader.result));
-                    reader.onerror = reject;
-                    reader.readAsArrayBuffer(file);
-                }, reject);
-            }, reject);
-        }, reject);
-    });
 }
  // -------------------------------------------------------
 // 6. UPDATED loadLibrary — lazy initializes player on first game load

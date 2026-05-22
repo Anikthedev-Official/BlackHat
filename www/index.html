@@ -47,9 +47,12 @@ document.addEventListener('deviceready', function () {
     <div id="header">
         <div id="app-title">BLACKHAT <span>PRO</span></div>
            <button id="library-toggle">Library</button>
-           <button id="global-library-btn">🌐 Layout Library</button>
+          <!-- <button id="global-library-btn">🌐 Layout Library</button>
            <button id="global-games-btn">
     🌐 Games Library
+</button> -->
+<button id="the-world-btn" style="background:#f2711c; color:white; border:none; padding:12px 25px; border-radius:30px; font-weight:bold; cursor:pointer; font-size:16px; box-shadow: 0 0 15px rgba(242, 113, 28, 0.4);">
+    🌎 THE WORLD
 </button>
         <button id="settings-toggle">Settings</button>
     </div>
@@ -204,10 +207,13 @@ document.addEventListener('deviceready', function () {
 
    <!-- <div id="debug-log">Ready</div>
 
-     load library presets before app.js -->
-    <script src="layout-library.js"></script>
+     load library presets before app.js 
+
     <script src="global-library-client.js"></script>
-    <script src="global-games-client.js"></script>
+    <script src="global-games-client.js"></script>-->
+        <script src="layout-library.js"></script>
+    <script src="Client.js"></script>
+    <script>initTheWorld();</script>
     <script>initLayoutLibrary();</script>
     <script src="app.js"> </script>
 </body>
