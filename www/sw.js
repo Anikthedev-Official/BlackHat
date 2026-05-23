@@ -41,13 +41,28 @@ self.addEventListener('activate', (e) => {
 
 // Fetch — cache first for engine files, network first for everything else
 self.addEventListener('fetch', (e) => {
+    // 1. CRITICAL: Block non-web requests immediately
+    if (!e.request.url.startsWith('http')) return;
+
+    // 2. Block non-GET requests (submissions)
+    if (e.request.method !== 'GET') return;
+
     e.respondWith(
         fetch(e.request)
             .then(res => {
-                // only cache valid responses
                 if (!res || res.status !== 200 || res.type === 'opaque') return res;
+                
+                // Don't cache API calls
+                const url = new URL(e.request.url);
+                if (url.hostname.includes('hf.space')) return res;
+
                 const clone = res.clone();
-                caches.open('flash-emu-pro-v1').then(cache => cache.put(e.request, clone));
+                caches.open(CACHE_NAME).then(cache => {
+                    // Double check URL before putting in cache
+                    if (e.request.url.startsWith('http')) {
+                        cache.put(e.request, clone);
+                    }
+                });
                 return res;
             })
             .catch(() => caches.match(e.request))
