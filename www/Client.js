@@ -240,60 +240,90 @@ async function sendMsg(type) {
     renderUI();
 }
 
-// --- 6. PROFILE ---
+// --- 6. PROFILE LOGIC (FIXED) ---
+
 async function renderProfile(el) {
+    // If user is not logged in, show the login form
     if (!user) {
-        el.innerHTML = `<div style="text-align:center; padding-top:50px;"><h3>Please Login</h3></div>`;
+        renderLoginUI(el);
         return;
     }
 
-    const res = await fetch(`${WORLD_API}/friends/data/${user.username}`);
-    const d = await res.json();
-    const allData = d.friends || [];
+    el.innerHTML = '<p style="text-align:center; opacity:0.5;">Loading profile...</p>';
 
-    // Filter data
-    const requests = allData.filter(f => f.receiver === user.username && f.status === 'pending');
-    const friends = allData.filter(f => f.status === 'accepted');
+    try {
+        // Fetch Friends and Requests
+        const res = await fetch(`${WORLD_API}/friends/data/${user.username}`);
+        const data = await res.json();
+        const allFriends = data.friends || [];
 
-    if (isEditMode) {
-        // ... (Keep your Edit Mode code here) ...
-    } else {
-        el.innerHTML = `
-            <div style="text-align:center; padding-bottom:20px;">
-                <img src="${user.avatar_url || 'https://api.dicebear.com/7.x/pixel-art/svg?seed='+user.username}" style="width:100px; height:100px; border-radius:50%; border:2px solid #f2711c; object-fit:cover;">
-                <h2>${user.username}</h2>
-                <button onclick="isEditMode=true; renderUI();" style="padding:5px 15px; border-radius:20px; background:#222; color:#f2711c; border:1px solid #f2711c; cursor:pointer;">EDIT PROFILE</button>
-            </div>
+        const pending = allFriends.filter(f => f.receiver === user.username && f.status === 'pending');
+        const accepted = allFriends.filter(f => f.status === 'accepted');
 
-            <!-- INCOMING REQUESTS -->
-            <div style="margin-top:20px; background:#111; padding:15px; border-radius:10px; border-left:4px solid #f2711c;">
-                <h4 style="color:#f2711c; margin:0 0 10px;">PENDING REQUESTS (${requests.length})</h4>
-                ${requests.map(r => `
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; background:#000; padding:10px; border-radius:8px;">
-                        <b>${r.sender}</b>
-                        <div>
-                            <button onclick="respondFriend('${r.sender}', 'accepted')" style="background:#4caf50; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-weight:bold;">ACCEPT</button>
-                            <button onclick="respondFriend('${r.sender}', 'decline')" style="background:#333; color:#666; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; margin-left:5px;">DECLINE</button>
+        if (isEditMode) {
+            // --- EDIT MODE VIEW ---
+            el.innerHTML = `
+                <div style="text-align:center;">
+                    <h3 style="color:#f2711c;">EDIT PROFILE</h3>
+                    <img src="${user.avatar_url || 'https://api.dicebear.com/7.x/pixel-art/svg?seed='+user.username}" style="width:100px; height:100px; border-radius:50%; opacity:0.5;">
+                    <button onclick="openAvatarEditor()" style="display:block; margin: 10px auto; background:#f2711c; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">Change Photo</button>
+                    <textarea id="edit-bio" placeholder="Write a bio..." style="width:100%; height:80px; background:#111; color:white; border:1px solid #333; border-radius:8px; padding:10px; margin-top:20px; box-sizing:border-box;">${user.bio || ''}</textarea>
+                    <button onclick="saveProfile()" style="width:100%; background:#f2711c; color:white; padding:15px; border:none; font-weight:bold; margin-top:10px; border-radius:8px; width:100%; cursor:pointer;">SAVE CHANGES</button>
+                    <button onclick="isEditMode=false; renderUI();" style="background:none; border:none; color:#555; margin-top:10px; cursor:pointer;">Cancel</button>
+                </div>`;
+        } else {
+            // --- NORMAL PROFILE VIEW ---
+            el.innerHTML = `
+                <div style="text-align:center; padding-bottom:20px;">
+                    <img src="${user.avatar_url || 'https://api.dicebear.com/7.x/pixel-art/svg?seed='+user.username}" style="width:100px; height:100px; border-radius:50%; border:2px solid #f2711c; object-fit:cover; margin-bottom:10px;">
+                    <h2 style="margin:0;">${user.username}</h2>
+                    <p style="color:#666; font-size:14px; margin-bottom:15px;">${user.bio || 'No bio yet.'}</p>
+                    <button onclick="isEditMode=true; renderUI();" style="background:#222; color:#f2711c; border:1px solid #f2711c; padding:8px 20px; border-radius:20px; font-size:12px; font-weight:bold; cursor:pointer;">EDIT PROFILE</button>
+                </div>
+
+                <div style="background:#111; padding:15px; border-radius:12px; border:1px solid #222; margin-bottom:15px;">
+                    <h4 style="margin:0 0 10px; color:#f2711c; font-size:11px;">REQUESTS (${pending.length})</h4>
+                    ${pending.map(p => `
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <span>${p.sender}</span>
+                            <button onclick="respondFriend('${p.sender}', 'accepted')" style="background:#4caf50; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">ACCEPT</button>
                         </div>
-                    </div>
-                `).join('') || '<small style="color:#444;">No new requests.</small>'}
-            </div>
+                    `).join('') || '<p style="color:#333; font-size:12px; margin:0;">No new requests.</p>'}
+                </div>
 
-            <!-- FRIENDS LIST -->
-            <div style="margin-top:20px; background:#111; padding:15px; border-radius:10px;">
-                <h4 style="color:#f2711c; margin:0 0 10px;">FRIENDS (${friends.length})</h4>
-                ${friends.map(f => {
-                    const fn = f.sender === user.username ? f.receiver : f.sender;
-                    return `<div style="display:flex; justify-content:space-between; align-items:center; padding:10px; background:#181818; border-radius:8px; margin-bottom:5px;">
-                        <b>👤 ${fn}</b>
-                        <button onclick="chatTarget='${fn}'; chatMode='private'; renderUI();" style="background:#333; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">DM</button>
-                    </div>`;
-                }).join('') || '<small style="color:#444;">You haven\'t added any friends yet.</small>'}
-            </div>
-            
-            <button onclick="localStorage.removeItem('bh_user'); user=null; renderUI();" style="margin-top:30px; background:none; border:none; color:#444; text-decoration:underline; cursor:pointer;">Logout</button>
-        `;
+                <div style="background:#111; padding:15px; border-radius:12px; border:1px solid #222;">
+                    <h4 style="margin:0 0 10px; color:#f2711c; font-size:11px;">FRIENDS (${accepted.length})</h4>
+                    ${accepted.map(f => {
+                        const fn = f.sender === user.username ? f.receiver : f.sender;
+                        return `<div onclick="chatTarget='${fn}'; chatMode='private'; renderUI();" style="padding:10px; background:#181818; border-radius:8px; margin-bottom:5px; cursor:pointer; font-weight:bold; display:flex; justify-content:space-between;"><span>👤 ${fn}</span> <small style="color:#444;">CHAT</small></div>`;
+                    }).join('') || '<p style="color:#333; font-size:12px; margin:0;">No friends yet.</p>'}
+                </div>
+                
+                <button onclick="logoutWorld()" style="margin-top:30px; background:none; border:none; color:#444; text-decoration:underline; font-size:12px; cursor:pointer; width:100%;">Sign Out</button>
+            `;
+        }
+    } catch (err) {
+        // If the backend fails (404), we still show the profile
+        el.innerHTML = `<div style="text-align:center;"><h2>${user.username}</h2><p>Error loading friends.</p><button onclick="logoutWorld()">Logout</button></div>`;
     }
+}
+
+// --- MISSING FUNCTION: THE LOGIN UI ---
+function renderLoginUI(el) {
+    el.innerHTML = `
+        <div style="max-width:320px; margin: 40px auto; text-align:center; background:rgba(255,255,255,0.02); padding:30px; border-radius:20px; border:1px solid #111;">
+            <h2 style="color:#f2711c; margin-top:0;">${authMode === 'login' ? 'Welcome Back' : 'Create Identity'}</h2>
+            <p style="font-size:12px; color:#555; margin-bottom:25px;">Enter your credentials to access the world.</p>
+            
+            <input id="u-login" placeholder="Username" style="width:100%; padding:14px; margin-bottom:12px; background:#000; border:1px solid #222; color:white; border-radius:10px; box-sizing:border-box;">
+            <input id="p-login" type="password" placeholder="Secret Key" style="width:100%; padding:14px; margin-bottom:20px; background:#000; border:1px solid #222; color:white; border-radius:10px; box-sizing:border-box;">
+            
+            <button onclick="handleAuth()" style="width:100%; padding:14px; background:#f2711c; color:white; font-weight:bold; border:none; border-radius:10px; cursor:pointer;">${authMode.toUpperCase()}</button>
+            
+            <p style="font-size:13px; color:#f2711c; margin-top:20px; cursor:pointer; opacity:0.8;" onclick="authMode='${authMode==='login'?'signup':'login'}'; renderUI();">
+                ${authMode === 'login' ? "New here? Create account" : "Already have an account? Login"}
+            </p>
+        </div>`;
 }
 
 // --- RESPOND TO FRIEND REQ ---
