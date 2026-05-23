@@ -6,6 +6,7 @@
 const WORLD_API = 'https://anikthedev-offical-blackhat-games.hf.space';
 let user = JSON.parse(localStorage.getItem('bh_user')) || null;
 let currentTab = 'games';
+let authMode = 'login';
 let chatMode = 'global';
 let chatTarget = null;
 let isEditMode = false;
