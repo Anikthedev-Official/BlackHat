@@ -2,13 +2,19 @@
 // THE WORLD — MASTER CLIENT V9 (FIXED & UNIFIED)
 // =====================================================
 
-const WORLD_API = 'https://anikthedev-offical-blackhat-games.hf.space';
+let WORLD_API = 'https://anikthedev-offical-blackhat-games.hf.space';
 let user = JSON.parse(localStorage.getItem('bh_user')) || null;
 let currentTab = 'games';
 let authMode = 'login';
 let chatMode = 'global';
 let chatTarget = null;
 let isEditMode = false;
+
+window.ActivateDebugMode = (url = 'http://localhost:7860') => {
+    WORLD_API = url;
+    console.log(`ActivateDebugMode(): now using ${WORLD_API}`);
+    alert(`Debug mode active:\nAPI endpoint set to ${WORLD_API}`);
+};
 
 // --- 1. BOOT COMPATIBILITY (Fixed ReferenceErrors) ---
 if (typeof window.resolutionScale === 'undefined') window.resolutionScale = window.devicePixelRatio || 1;
@@ -76,19 +82,28 @@ async function renderUI() {
 // --- 3. GAMES TAB ---
 async function renderGames(el) {
     el.innerHTML = '<p style="text-align:center; opacity:0.5;">Connecting to vault...</p>';
-    const res = await fetch(`${WORLD_API}/games`);
-    const data = await res.json();
-    
-    el.innerHTML = `<button onclick="openGameSubmitForm()" style="width:100%; padding:12px; background:#f2711c; border:none; color:white; margin-bottom:15px; border-radius:8px; font-weight:bold;">+ SUBMIT SWF</button>` +
-    (data.games || []).map(g => `
-        <div style="background:#111; border:1px solid #222; padding:15px; border-radius:10px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-            <div style="min-width:0;">
-                <b style="font-size:15px;">${g.title}</b><br>
-                <small style="color:#555;">by ${g.author} • ${g.category}</small>
+    try {
+        const res = await fetch(`${WORLD_API}/games`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        
+        el.innerHTML = `<button onclick="openGameSubmitForm()" style="width:100%; padding:12px; background:#f2711c; border:none; color:white; margin-bottom:15px; border-radius:8px; font-weight:bold;">+ SUBMIT SWF</button>` +
+        (data.games || []).map(g => `
+            <div style="background:#111; border:1px solid #222; padding:15px; border-radius:10px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="min-width:0;">
+                    <b style="font-size:15px;">${g.title}</b><br>
+                    <small style="color:#555;">by ${g.author} • ${g.category}</small>
+                </div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button onclick='downloadGlobalGame("${g.id}", ${JSON.stringify(g.title)})' style="background:#f2711c; color:white; border:none; padding:8px 18px; border-radius:5px; font-weight:bold; cursor:pointer;">PLAY</button>
+                    ${user?.username === g.author ? `<button onclick='editGame(${JSON.stringify(g.id)}, ${JSON.stringify(g.title)}, ${JSON.stringify(g.category)})' style="background:#444; color:white; border:none; padding:8px 18px; border-radius:5px; font-weight:bold; cursor:pointer;">EDIT</button><button onclick='deleteGame(${JSON.stringify(g.id)})' style="background:#900; color:white; border:none; padding:8px 18px; border-radius:5px; font-weight:bold; cursor:pointer;">DEL</button>` : ''}
+                </div>
             </div>
-            <button onclick="downloadGlobalGame('${g.id}', '${g.title.replace(/'/g, "")}')" style="background:#f2711c; color:white; border:none; padding:8px 18px; border-radius:5px; font-weight:bold; cursor:pointer;">PLAY</button>
-        </div>
-    `).join('');
+        `).join('');
+    } catch (error) {
+        console.error('renderGames failed', error);
+        el.innerHTML = `<div style="padding:20px; text-align:center; color:#f2711c;">Could not load games from ${WORLD_API}.<br>${error.message}</div>`;
+    }
 }
 
 window.downloadGlobalGame = async (id, title) => {
@@ -97,7 +112,7 @@ window.downloadGlobalGame = async (id, title) => {
     if (window.loadGameFile) {
         await window.loadGameFile(fileUrl, title);
     } else {
-        showLoader(`Streaming ${title}...`);
+        showLoader(`Downloading And Starting ${title}...`,1050);
         if (!window.currentPlayer) await initPlayer();
         await window.currentPlayer.load({ url: fileUrl });
         hideLoader();
@@ -106,15 +121,24 @@ window.downloadGlobalGame = async (id, title) => {
 
 // --- 4. LAYOUTS TAB ---
 async function renderLayouts(el) {
-    const res = await fetch(`${WORLD_API}/layouts`);
-    const data = await res.json();
-    el.innerHTML = `<button onclick="openLayoutSubmitForm()" style="width:100%; padding:12px; background:#333; color:white; border:1px solid #f2711c; margin-bottom:15px; border-radius:8px; font-weight:bold;">+ SHARE CURRENT LAYOUT</button>` +
-    (data.layouts || []).map(l => `
-        <div style="background:#111; border:1px solid #222; padding:15px; border-radius:10px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-            <div><b>${l.name}</b><br><small style="color:#555;">for ${l.game} by ${l.author}</small></div>
-            <button onclick="importLayout('${l.id}')" style="background:#333; color:white; border:1px solid #f2711c; padding:8px 15px; border-radius:6px; font-weight:bold; cursor:pointer;">GET</button>
-        </div>
-    `).join('');
+    try {
+        const res = await fetch(`${WORLD_API}/layouts`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        el.innerHTML = `<button onclick="openLayoutSubmitForm()" style="width:100%; padding:12px; background:#333; color:white; border:1px solid #f2711c; margin-bottom:15px; border-radius:8px; font-weight:bold;">+ SHARE CURRENT LAYOUT</button>` +
+        (data.layouts || []).map(l => `
+            <div style="background:#111; border:1px solid #222; padding:15px; border-radius:10px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                <div><b>${l.name}</b><br><small style="color:#555;">for ${l.game} by ${l.author}</small></div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button onclick="importLayout('${l.id}')" style="background:#333; color:white; border:1px solid #f2711c; padding:8px 15px; border-radius:6px; font-weight:bold; cursor:pointer;">GET</button>
+                    ${user?.username === l.author ? `<button onclick="editLayout(${JSON.stringify(l.id)}, ${JSON.stringify(l.name)}, ${JSON.stringify(l.game)})" style="background:#444; color:white; border:none; padding:8px 15px; border-radius:6px; font-weight:bold; cursor:pointer;">EDIT</button><button onclick="deleteLayout('${l.id}')" style="background:#900; color:white; border:none; padding:8px 15px; border-radius:6px; font-weight:bold; cursor:pointer;">DEL</button>` : ''}
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('renderLayouts failed', error);
+        el.innerHTML = `<div style="padding:20px; text-align:center; color:#f2711c;">Could not load layouts from ${WORLD_API}.<br>${error.message}</div>`;
+    }
 }
 
 window.importLayout = async (id) => {
@@ -124,6 +148,70 @@ window.importLayout = async (id) => {
     if (window.buildLayoutControls) window.buildLayoutControls();
     alert("Layout Applied!");
     document.getElementById('world-panel').style.display = 'none';
+};
+
+window.editGame = async (id, currentTitle, currentCategory) => {
+    if (!user) return alert('Login first.');
+    const title = prompt('Game title:', currentTitle);
+    if (title === null) return;
+    const category = prompt('Category:', currentCategory);
+    if (category === null) return;
+
+    const res = await fetch(`${WORLD_API}/games/${id}`, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ username: user.username, title, category })
+    });
+    const data = await res.json();
+    if (!data.ok) return alert(data.error || 'Could not update game.');
+    alert('Game updated');
+    renderUI();
+};
+
+window.deleteGame = async (id) => {
+    if (!user) return alert('Login first.');
+    if (!confirm('Delete this game?')) return;
+    const res = await fetch(`${WORLD_API}/games/${id}`, {
+        method: 'DELETE',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ username: user.username })
+    });
+    const data = await res.json();
+    if (!data.ok) return alert(data.error || 'Could not delete game.');
+    alert('Game deleted');
+    renderUI();
+};
+
+window.editLayout = async (id, currentName, currentGame) => {
+    if (!user) return alert('Login first.');
+    const name = prompt('Layout name:', currentName);
+    if (name === null) return;
+    const game = prompt('Game name:', currentGame);
+    if (game === null) return;
+
+    const res = await fetch(`${WORLD_API}/layouts/${id}`, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ username: user.username, name, game })
+    });
+    const data = await res.json();
+    if (!data.ok) return alert(data.error || 'Could not update layout.');
+    alert('Layout updated');
+    renderUI();
+};
+
+window.deleteLayout = async (id) => {
+    if (!user) return alert('Login first.');
+    if (!confirm('Delete this layout?')) return;
+    const res = await fetch(`${WORLD_API}/layouts/${id}`, {
+        method: 'DELETE',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ username: user.username })
+    });
+    const data = await res.json();
+    if (!data.ok) return alert(data.error || 'Could not delete layout.');
+    alert('Layout deleted');
+    renderUI();
 };
 
 // --- 5. CHAT SYSTEM ---
@@ -139,18 +227,51 @@ async function renderChat(el) {
     if (chatMode === 'global') {
         sub.innerHTML = `<div id="chat-msgs" style="height:55vh; overflow-y:auto; display:flex; flex-direction:column-reverse; background:black; padding:15px; border-radius:10px; border:1px solid #222; margin-bottom:10px;"></div>
         <div style="display:flex; gap:10px;"><input id="chat-in" placeholder="Say something..." style="flex:1; padding:12px; background:#111; color:white; border:1px solid #333; border-radius:8px;"><button onclick="sendWorldMsg('global')" style="background:#f2711c; color:white; border:none; padding:10px 20px; border-radius:8px; font-weight:bold;">SEND</button></div>`;
-        const res = await fetch(`${WORLD_API}/chat`);
-        const d = await res.json();
-        document.getElementById('chat-msgs').innerHTML = d.messages.map(m => `<div><b style="color:#f2711c; cursor:pointer;" onclick="chatTarget='${m.username}'; chatMode='private'; renderUI();">${m.username}:</b> ${m.text}</div>`).join('');
+        try {
+            const res = await fetch(`${WORLD_API}/chat`);
+            const d = await res.json();
+            if (!res.ok || !Array.isArray(d.messages)) throw new Error(d.error || 'Unable to load chat');
+            document.getElementById('chat-msgs').innerHTML = d.messages.map(m => `
+                <div style="display:flex; gap:10px; margin-bottom:12px; align-items:flex-start;">
+                    <img src="${m.avatar_url || 'https://api.dicebear.com/7.x/pixel-art/svg?seed=' + m.username}" 
+                         onclick="viewUserProfile('${m.username}')"
+                         style="width:35px; height:35px; border-radius:50%; border:1px solid #333; cursor:pointer; object-fit:cover;">
+                    <div style="flex:1;">
+                        <b style="color:#f2711c; font-size:13px; cursor:pointer;" onclick="viewUserProfile('${m.username}')">${m.username}</b>
+                        <div style="color:#ddd; font-size:14px; margin-top:2px;">${m.text}</div>
+                    </div>
+                </div>
+            `).join('');
+        } catch (e) {
+            console.error('Global chat load failed', e);
+            document.getElementById('chat-msgs').innerHTML = `<div style="color:#f2711c;">Unable to load global chat. ${e.message}</div>`;
+        }
     } else {
         if (!user) return sub.innerHTML = '<p style="text-align:center; padding:20px;">Login to use Private Chat.</p>';
         if (chatTarget) {
             sub.innerHTML = `<div style="display:flex; gap:10px; margin-bottom:10px;"><button onclick="chatTarget=null; renderUI();" style="background:#333; color:white; border:none; padding:5px 12px; border-radius:5px;">← Back</button><b>Chat with ${chatTarget}</b></div>
             <div id="chat-msgs" style="height:50vh; overflow-y:auto; background:black; padding:15px; border-radius:10px; border:1px solid #222; margin-bottom:10px;"></div>
             <div style="display:flex; gap:10px;"><input id="chat-in" style="flex:1; padding:12px; background:#111; color:white; border:1px solid #333; border-radius:8px;"><button onclick="sendWorldMsg('private')" style="background:#f2711c; color:white; border:none; padding:10px 20px; border-radius:8px;">SEND</button></div>`;
-            const res = await fetch(`${WORLD_API}/chat/private/${user.username}/${chatTarget}`);
-            const d = await res.json();
-            document.getElementById('chat-msgs').innerHTML = d.messages.map(m => `<div style="text-align:${m.sender===user.username?'right':'left'}; margin-bottom:8px;"><span style="background:${m.sender===user.username?'#f2711c':'#222'}; padding:8px 12px; border-radius:10px; display:inline-block;">${m.text}</span></div>`).join('');
+            try {
+                const res = await fetch(`${WORLD_API}/chat/private/${user.username}/${chatTarget}`);
+                const d = await res.json();
+                if (!res.ok || !Array.isArray(d.messages)) throw new Error(d.error || 'Unable to load private chat');
+                document.getElementById('chat-msgs').innerHTML = d.messages.map(m => {
+                    const isMe = m.sender === user.username;
+                    const avatar = isMe ? user.avatar_url || 'https://api.dicebear.com/7.x/pixel-art/svg?seed=' + user.username : 'https://api.dicebear.com/7.x/pixel-art/svg?seed=' + m.sender;
+                    return `
+                        <div style="display:flex; flex-direction:${isMe ? 'row-reverse' : 'row'}; gap:8px; margin-bottom:12px; align-items:flex-start;">
+                            <img src="${avatar}" onclick="viewUserProfile('${m.sender}')" style="width:30px; height:30px; border-radius:50%; cursor:pointer; object-fit:cover;">
+                            <span style="background:${isMe ? '#f2711c' : '#222'}; color:${isMe ? '#111' : '#ddd'}; padding:8px 12px; border-radius:12px; max-width:70%; font-size:14px; display:inline-block;">
+                                ${m.text}
+                            </span>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error('Private chat load failed', e);
+                document.getElementById('chat-msgs').innerHTML = `<div style="color:#f2711c;">Unable to load private chat. ${e.message}</div>`;
+            }
         } else {
             sub.innerHTML = `<input oninput="searchU(this.value)" placeholder="Search user..." style="width:100%; padding:12px; background:#111; color:white; border:1px solid #333; border-radius:8px;"><div id="s-res" style="margin-top:10px;"></div>
             <h4 style="color:#444; margin-top:20px;">INBOX</h4><div id="inbox-list"></div>`;
@@ -169,7 +290,7 @@ window.searchU = async (q) => {
         <div style="padding:10px; background:#111; border-bottom:1px solid #222; display:flex; justify-content:space-between; align-items:center;">
             <span>👤 ${u.username}</span>
             <div>
-                <button onclick="chatTarget='${u.username}'; renderUI();" style="background:#333; color:white; border:none; padding:5px 10px; border-radius:4px;">DM</button>
+                ${u.username === user.username ? '<button disabled style="background:#444; color:#888; border:none; padding:5px 10px; border-radius:4px;">YOU</button>' : `<button onclick="chatTarget='${u.username}'; renderUI();" style="background:#333; color:white; border:none; padding:5px 10px; border-radius:4px;">DM</button>`}
                 <button onclick="sendFriendReq('${u.username}')" style="background:#f2711c; color:white; border:none; padding:5px 10px; border-radius:4px; margin-left:5px;">+ ADD</button>
             </div>
         </div>`).join('');
@@ -178,16 +299,58 @@ window.searchU = async (q) => {
 window.sendWorldMsg = async (type) => {
     const text = document.getElementById('chat-in').value;
     if (!user || !text) return;
+    if (type === 'private' && chatTarget === user.username) return alert('You cannot DM yourself.');
     const body = type === 'global' ? { username: user.username, text } : { sender: user.username, receiver: chatTarget, text };
     const endpoint = type === 'global' ? '/chat/send' : '/chat/private/send';
-    await fetch(`${WORLD_API}${endpoint}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const res = await fetch(`${WORLD_API}${endpoint}`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const data = await res.json();
+    if (!data.ok) return alert(data.error || 'Could not send message.');
     document.getElementById('chat-in').value = '';
     renderUI();
 };
 
 window.sendFriendReq = async (target) => {
-    await fetch(`${WORLD_API}/friends/request`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({sender: user.username, receiver: target}) });
+    if (!user) return alert("Login first.");
+    if (target === user.username) return alert("You cannot send a friend request to yourself.");
+    const res = await fetch(`${WORLD_API}/friends/request`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({sender: user.username, receiver: target}) });
+    const data = await res.json();
+    if (!data.ok) return alert(data.error || "Could not send request.");
     alert("Request Sent!");
+};
+
+// --- VIEW PUBLIC PROFILE ---
+window.viewUserProfile = async (username) => {
+    showLoader(`Loading ${username}'s profile...`);
+    try {
+        const res = await fetch(`${WORLD_API}/user/profile/${username}`);
+        const data = await res.json();
+        hideLoader();
+
+        if (!data.ok) return alert("User not found");
+        const p = data.profile;
+
+        const div = document.createElement('div');
+        div.id = 'public-profile-overlay';
+        div.style.cssText = `position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:1000006; display:flex; justify-content:center; align-items:center; padding:20px;`;
+        div.innerHTML = `
+            <div style="background:#111; border:1px solid #f2711c; padding:30px; border-radius:20px; width:100%; max-width:320px; text-align:center; color:white;">
+                <img src="${p.avatar_url || 'https://api.dicebear.com/7.x/pixel-art/svg?seed='+p.username}" style="width:120px; height:120px; border-radius:50%; border:3px solid #f2711c; object-fit:cover; margin-bottom:15px;">
+                <h2 style="margin:0;">${p.username}</h2>
+                <p style="color:#888; font-size:14px; margin:10px 0 20px;">${p.bio || 'This hacker has no bio.'}</p>
+                
+                <div style="display:flex; gap:10px;">
+                    ${p.username === user?.username ? `<button disabled style="flex:1; padding:12px; background:#444; color:#888; border:none; border-radius:8px; font-weight:bold;">YOU</button>` : `<button onclick="chatTarget='${p.username}'; chatMode='private'; renderUI(); document.getElementById('public-profile-overlay').remove();" style="flex:1; padding:12px; background:#333; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">MESSAGE</button>`}
+                    ${p.username === user?.username ? `<button disabled style="flex:1; padding:12px; background:#444; color:#888; border:none; border-radius:8px; font-weight:bold;">+ ADD</button>` : `<button onclick="sendFriendReq('${p.username}'); document.getElementById('public-profile-overlay').remove();" style="flex:1; padding:12px; background:#f2711c; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">+ ADD</button>`}
+                </div>
+                
+                <button onclick="this.parentElement.parentElement.remove()" style="margin-top:20px; background:none; border:none; color:#444; cursor:pointer;">Close</button>
+            </div>
+        `;
+        document.body.appendChild(div);
+    } catch (e) {
+        hideLoader();
+        alert("Could not load profile.");
+    }
 };
 
 // --- 6. PROFILE TAB ---
@@ -250,8 +413,13 @@ window.handleAuth = async () => {
 
 window.saveProfileChanges = async () => {
     const bio = document.getElementById('ebio').value;
-    await fetch(`${WORLD_API}/user/update-profile`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username: user.username, bio, avatar_url: user.avatar_url}) });
-    user.bio = bio; localStorage.setItem('bh_user', JSON.stringify(user)); isEditMode = false; renderUI();
+    const res = await fetch(`${WORLD_API}/user/update-profile`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username: user.username, bio, avatar_url: user.avatar_url}) });
+    const data = await res.json();
+    if (!data.ok) return alert(data.error || 'Could not save profile.');
+    user.bio = bio;
+    localStorage.setItem('bh_user', JSON.stringify(user));
+    isEditMode = false;
+    renderUI();
 };
 
 window.respondReq = async (sender, action) => {

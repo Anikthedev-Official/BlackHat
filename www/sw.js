@@ -1,4 +1,4 @@
-const CACHE_NAME = 'flash-emu-pro-v1';
+/*const CACHE_NAME = 'flash-emu-pro-v1';
 const PRECACHE = [
     '/',
     '/index.html',
@@ -40,31 +40,28 @@ self.addEventListener('activate', (e) => {
 });
 
 // Fetch — cache first for engine files, network first for everything else
-self.addEventListener('fetch', (e) => {
-    // 1. CRITICAL: Block non-web requests immediately
-    if (!e.request.url.startsWith('http')) return;
-
-    // 2. Block non-GET requests (submissions)
-    if (e.request.method !== 'GET') return;
-
-    e.respondWith(
-        fetch(e.request)
-            .then(res => {
-                if (!res || res.status !== 200 || res.type === 'opaque') return res;
-                
-                // Don't cache API calls
-                const url = new URL(e.request.url);
-                if (url.hostname.includes('hf.space')) return res;
-
-                const clone = res.clone();
-                caches.open(CACHE_NAME).then(cache => {
-                    // Double check URL before putting in cache
-                    if (e.request.url.startsWith('http')) {
-                        cache.put(e.request, clone);
-                    }
+// Inside sw.js
+self.addEventListener('fetch', (event) => {
+    // Only attempt to cache files from YOUR domain or game assets
+    if (event.request.url.includes('google-analytics') || event.request.url.includes('serving-sys')) {
+        return; // Skip tracking scripts
+    }
+    
+    event.respondWith(
+        caches.match(event.request).then((response) => {
+            return response || fetch(event.request).then((fetchResponse) => {
+                // Only cache if the response is valid (status 200)
+                if(!fetchResponse || fetchResponse.status !== 200 || fetchResponse.type !== 'basic') {
+                    return fetchResponse;
+                }
+                let responseToCache = fetchResponse.clone();
+                caches.open(CACHE_NAME).then((cache) => {
+                    cache.put(event.request, responseToCache);
                 });
-                return res;
-            })
-            .catch(() => caches.match(e.request))
+                return fetchResponse;
+            });
+        }).catch(() => {
+            // Offline fallback
+        })
     );
-});
+});*/

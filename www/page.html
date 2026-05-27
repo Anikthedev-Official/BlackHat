@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>AXE BOAT - FULL SCREEN</title>
+    <script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
+    <style>
+        /* This makes the page fill the entire window with no scrollbars */
+        body, html { 
+            background-color: #304469; 
+            margin: 0; 
+            padding: 0; 
+            width: 100%; 
+            height: 100%; 
+            overflow: hidden; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* This makes the Ruffle container fill the screen */
+        #flashContent { 
+            width: 100vw; 
+            height: 100vh; 
+        }
+
+        /* Forces the Ruffle player inside to be full size */
+        ruffle-player {
+            width: 100% !important;
+            height: 100% !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="flashContent"></div>
+
+    <script type="text/javascript">
+        window.ga = window.ga || function() { (ga.q = ga.q || []).push(arguments) };
+        window.saveGA = function(cat, lab) { console.log("SWF Trace:", cat, lab); };
+        window.getHash = function() { return ""; };
+
+        window.RufflePlayer = window.RufflePlayer || {};
+        window.RufflePlayer.config = { 
+            "allowScriptAccess": true,
+            "letterbox": "on",        // Keeps the game's shape correct
+            "scale": "showAll",       // Ensures no parts are cut off
+            "forceScale": true
+        };
+
+        window.addEventListener("DOMContentLoaded", () => {
+            const ruffle = window.RufflePlayer.newest();
+            const player = ruffle.createPlayer();
+            document.getElementById("flashContent").appendChild(player);
+            
+            player.load({
+                url: "https://raw.githubusercontent.com/david148241/axeboat.github.io/main/app/index-vaxe.swf",
+                parameters: {
+                    "folder": "https://raw.githubusercontent.com/david148241/axeboat.github.io/main/app/",
+                    "lang": "fr",
+                    "check": "true"
+                },
+                allowScriptAccess: true 
+            });
+        });
+    </script>
+</body>
+</html>

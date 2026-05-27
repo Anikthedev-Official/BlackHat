@@ -126,5 +126,10 @@
         "title": "Angry Birds Chrome",
         "category": "Action",
         "file": "https://raw.githubusercontent.com/Anikthedev-Official/crispy-invention/main/angry-birds-chrome.swf"
+    },
+    {
+      "title": "Axe Boat",
+      "category": "Mods",
+      "link": "page.html"
     }
 ]

@@ -4,6 +4,23 @@
  * non gay version of app.js, for the purists out there. 
  * ^ joke
  */
+
+// 1. GLOBAL RUFFLE CONFIG (MUST BE AT THE VERY TOP)
+window.RufflePlayer = window.RufflePlayer || {};
+window.RufflePlayer.config = {
+    "allowScriptAccess": true,
+    "autoplay": "on",
+    "unmuteOverlay": "hidden",
+    "letterbox": "on",
+    "warnOnUnsupportedContent": false
+};
+
+// 2. FAKE FUNCTIONS FOR AXE BOAT / INCREDIBOX
+window.saveGA = function(categorie, label) {
+    console.log("FLASH_EVENT: " + categorie + " | " + label);
+};
+window.getHash = function() { return ""; };
+window.embedFlashOk = function() { return true; };
 window.Platform = window.Platform || {
     isCordova: !!window.cordova,
     isNWJS: typeof window.process === "object" && !!window.process.versions?.nw,
@@ -26,7 +43,11 @@ if ('serviceWorker' in navigator) {
         .catch(e => console.log('SW failed:', e));
 }
 window.currentPlayer = null;
-function showLoader(msg) {
+function wait(ms = 10) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function showLoader(msg, time = 0) {
     let el = document.getElementById('boot-loader');
     if (!el) {
         el = document.createElement('div');
@@ -48,14 +69,28 @@ function showLoader(msg) {
         `;
         document.body.appendChild(el);
     }
-    document.getElementById('boot-loader-msg').innerText = msg;
+    const bar = document.getElementById('boot-loader-bar');
+    const msgEl = document.getElementById('boot-loader-msg');
+    if (msgEl) msgEl.innerText = msg;
+    if (bar) {
+        bar.style.transition = time > 0 ? `width ${time}ms` : 'width 0.3s';
+        if (time > 0) {
+            bar.style.width = '0%';
+            wait(10).then(() => { bar.style.width = '100%'; });
+        }
+    }
     return el;
 }
-function updateLoader(msg, pct) {
+function updateLoader(msg, pct, time = 0) {
     const el = document.getElementById('boot-loader');
     if (!el) return;
-    document.getElementById('boot-loader-msg').innerText = msg;
-    document.getElementById('boot-loader-bar').style.width = pct + '%';
+    const msgEl = document.getElementById('boot-loader-msg');
+    const bar = document.getElementById('boot-loader-bar');
+    if (msgEl) msgEl.innerText = msg;
+    if (bar) {
+        bar.style.transition = time > 0 ? `width ${time}ms` : 'width 0.3s';
+        bar.style.width = Math.max(0, Math.min(100, pct)) + '%';
+    }
 }
 
 function hideLoader() {
@@ -120,15 +155,9 @@ async function initPlayer() {
             await new Promise(resolve => setTimeout(resolve, 100));
         }
 
-        const ruffle = window.RufflePlayer.newest();
-window.currentPlayer = ruffle.createPlayer({
-    letterbox: "on",        // forces black bars, never stretches
-    fitToContainer: true,
-    quality: "low",
-    warnOnUnsupportedContent: false,
-    logLevel: "error",
-});
-
+        // --- Inside initPlayer() ---
+const ruffle = window.RufflePlayer.newest();
+        window.currentPlayer = ruffle.createPlayer();
 
 
         window.currentPlayer.style.width = '100%';
@@ -139,6 +168,10 @@ window.currentPlayer = ruffle.createPlayer({
         window.currentPlayer.style.transformOrigin = 'center center';
         window.currentPlayer.style.imageRendering = 'pixelated';
       document.getElementById("container").appendChild(window.currentPlayer);
+          // Set the internal config directly on the player instance
+    window.currentPlayer.config = {
+        allowScriptAccess: "always"
+    };
 
 
         updateLoader("Ready!", 100);
@@ -617,6 +650,18 @@ function buildJoystick(item) {
         }
     });
 }
+function closeGame() {
+    if (window.currentPlayer) {
+        window.currentPlayer.remove();
+        window.currentPlayer = null;
+    }
+    document.getElementById('back-to-app').style.display = 'none';
+    document.getElementById('header').classList.remove('hidden'); // Show header
+    log("Game closed. Returning to library.");
+}
+
+// Attach the click event
+
 function getSWFDimensions() {
 }
 async function getSWF(url, onProgress = () => {}) {
@@ -763,10 +808,18 @@ async function loadGameFile(remotePath, title) {
 
     // 5. LOAD INTO FLASH PLAYER
     updateLoader(`Starting ${title}...`, 85);
-    await window.currentPlayer.load({ 
-        data: bytes,
-        backgroundColor: "#000000"
-    });
+await window.currentPlayer.load({ 
+    data: bytes,
+    backgroundColor: "#304469",
+    // FIX: Add these three lines inside the load call!
+    allowScriptAccess: "always",
+    forceSandbox: false,
+    parameters: {
+        "folder": "app/",
+        "lang": "en",
+        "check": "true"
+    }
+});
 
     // 📏 LETTERBOX FIX
     const dims = getSWFDimensions(bytes);
@@ -802,33 +855,24 @@ async function loadLibrary() {
                 card.className = 'game-card';
                 card.innerText = game.title;
     card.onclick = async () => {
+        if (game.title === "Axe Boat") {
+            window.location.href = game.link;
+            return;
+        }
+
     libraryPanel.classList.remove('open');
     showLoader(`Loading ${game.title}...`);
+    
+    // Show the back button
+
 
     if (game.version) document.getElementById('engine-select').value = game.version;
     if (!window.currentPlayer || game.version) await initPlayer();
 
     try {
         if (game.file) {
-            await loadGameFile(game.file, game.title);
-        } else if (game.data) {
-            let b64;
-            if (game.data.endsWith('.txt') || game.data.includes('/')) {
-                const res = await fetch(game.data);
-                b64 = await res.text();
-            } else {
-                b64 = game.data;
-            }
-            const binary = atob(b64.trim());
-            const bytes = new Uint8Array(binary.length);
-            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-            await window.currentPlayer.load({ data: bytes });
-        } else if (game.url === 'local') {
-            hideLoader();
-            document.getElementById('file-input').click();
-            return;
-        } else if (game.url) {
-            await window.currentPlayer.load({ url: game.url });
+            // Pass the game object to loadGameFile
+            await loadGameFile(game.file, game.title, game);
         }
         log(`Loaded: ${game.title}`);
     } catch(e) { log("Load error: " + e.message); }
@@ -1030,3 +1074,7 @@ window.buildLayoutControls = buildLayoutControls;// expose for layout library
         console.error(err);
     }
 };
+// Global Mocks for Incredibox/Axe Boat
+window.saveGA = window.saveGA || function(c, l) { console.log("GA:", c, l); };
+window.getHash = window.getHash || function() { return ""; };
+window.embedFlashOk = window.embedFlashOk || function() { return true; };
